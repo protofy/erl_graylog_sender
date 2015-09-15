@@ -1,0 +1,6 @@
+1.0.0
+------
+- Travis support added
+- Refactorings to make tests more stable
+- Using protofy_common 1.*
+- GELF messages may not contain fields _ttl, _source, _all, _index, _type, _score anymore as they are reserved by elastic search

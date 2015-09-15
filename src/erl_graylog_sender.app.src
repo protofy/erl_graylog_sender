@@ -1,0 +1,7 @@
+{application, erl_graylog_sender,
+ [{description, "Erlang Graylog sender"},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {application, [kernel, stdlib]},
+  {env, []}
+ ]}.
