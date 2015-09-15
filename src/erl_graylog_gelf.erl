@@ -33,7 +33,7 @@
 %% ====================================================================
 %%
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
-%% @doc GELF message formatter using version 1.1 of GELF (http://graylog2.org/gelf#specs)
+%% @doc GELF message formatter using version 1.1 of GELF (https://www.graylog.org/resources/gelf/)
 %%
 %% == Create a message ==
 %% 

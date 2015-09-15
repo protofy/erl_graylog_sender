@@ -33,7 +33,7 @@
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
 %% @doc This is the UDP worker module for erl_graylog_sender.
 %%
-%% Packets, which are too big for one UDP message will be chunked according to GELF protocol (http://graylog2.org/gelf).
+%% Packets, which are too big for one UDP message will be chunked according to GELF protocol (https://www.graylog.org/resources/gelf/).
 %%
 %% == Options ==
 %% ```

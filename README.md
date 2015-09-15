@@ -1,7 +1,7 @@
 # erl_graylog_sender
 
-This library application can be used to send messages to [graylog2](http://graylog2.org/).
-Messages can be sent to TCP and UDP inputs either in [GELF (1.1)](http://graylog2.org/gelf) or raw format.
+This library application can be used to send messages to [graylog](https://www.graylog.org/).
+Messages can be sent to TCP and UDP inputs either in [GELF (1.1)](https://www.graylog.org/resources/gelf/) or raw format.
 
 ## Usage
 Although you can use all modules separately you probably want to use the erl_graylog_sender module.
@@ -11,7 +11,7 @@ If you like to take it for a spin: After cloning, get the updates and compile:
 
     > make update && make
 
-You should have a running graylog2 server with properly configured inputs.
+You should have a running graylog server with properly configured inputs.
 
 Start the dev console:
 
@@ -34,7 +34,7 @@ erl> Msg = [{full_message, <<"Test Message">>}, {level, 1}].
 erl> erl_graylog_sender:send(Pid, Msg).
 ```
 
-The message should now appear in graylog2.
+The message should now appear in graylog.
 
 To stop the server call stop(Pid).
 
@@ -59,7 +59,7 @@ You can also start the server in singleton mode. This is useful if you want only
 ```
 
 ### Notes:
-As of right now you cannot send messages compressed via TCP, due to graylog2 using \0 as message separator.  
+As of right now you cannot send messages compressed via TCP, due to graylog using \0 as message separator.  
 
 In singleton mode you should use send/1, stop/0, get_opt/1 and set_opt/2 to access the sender. Otherwise use send/2, stop/1, get_opt/2, set_opt/3.
 
