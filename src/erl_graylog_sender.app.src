@@ -2,6 +2,6 @@
  [{description, "Erlang Graylog sender"},
   {vsn, "1.0.0"},
   {registered, []},
-  {application, [kernel, stdlib]},
+  {applications, [kernel, stdlib]},
   {env, []}
  ]}.
