@@ -57,22 +57,24 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([new/0,
-		 from_list/1, from_list/2,
-		 to_list/1,
-		 get_version/1,
-		 get_timestamp/1,
-		 set_host/2,
-		 get_host/1,
-		 set_short_message/2,
-		 get_short_message/1,
-		 set_full_message/2,
-		 get_full_message/1,
-		 set_level/2,
-		 get_level/1,
-		 set_additional/3,
-		 get_additional/2,
-		 to_sendable/2]).
+-export([
+  new/0,
+  from_list/1, from_list/2,
+  to_list/1,
+  get_version/1,
+  get_timestamp/1,
+  set_host/2,
+  get_host/1,
+  set_short_message/2,
+  get_short_message/1,
+  set_full_message/2,
+  get_full_message/1,
+  set_level/2,
+  get_level/1,
+  set_additional/3,
+  get_additional/2,
+  to_sendable/2
+]).
 
 -define(CURRENT_GELF_VER, <<"1.1">>).
 -define(DEFAULT_SHORT_MESSAGE_LENGTH, 80).
@@ -89,7 +91,7 @@
 -spec new() -> msg().
 %% ====================================================================
 new() ->
-	new(?CURRENT_GELF_VER).
+  new(?CURRENT_GELF_VER).
 
 
 %% from_list/1
@@ -98,7 +100,7 @@ new() ->
 -spec from_list(list()) -> msg().
 %% ====================================================================
 from_list(List) ->
-	from_list(List, []).
+  from_list(List, []).
 
 
 %% from_list/2
@@ -107,18 +109,21 @@ from_list(List) ->
 %%
 %% This will not check for duplicates
 -spec from_list(version(), [Opt]) -> msg() when
-	Opt :: {version, version()} %% currently only 1.1
-		 | {short_message_length, non_neg_integer()}.
+  Opt :: {version, version()} %% currently only 1.1
+     | {short_message_length, non_neg_integer()}.
 %% ====================================================================
 from_list(List, Opts) ->
-	Version = valid_version(?GV(version, Opts, ?CURRENT_GELF_VER)),
-	Add = case ?GV(short_message, List) of
-			  undefined -> [{version, Version},
-							{short_message, shorten(?GV(full_message, List),
-													?GV(short_message_length, Opts, ?DEFAULT_SHORT_MESSAGE_LENGTH))}];
-			  _ -> [{version, Version}]
-		  end,
-	do_from_list(List, Add).
+  Version = valid_version(?GV(version, Opts, ?CURRENT_GELF_VER)),
+  Add = case ?GV(short_message, List) of
+          undefined ->
+            [{version, Version},
+             {short_message, shorten(
+               ?GV(full_message, List),
+               ?GV(short_message_length, Opts, ?DEFAULT_SHORT_MESSAGE_LENGTH))}];
+          _ ->
+            [{version, Version}]
+        end,
+  do_from_list(List, Add).
 
 
 %% to_list/1
@@ -127,7 +132,7 @@ from_list(List, Opts) ->
 -spec to_list(msg()) -> list().
 %% ====================================================================
 to_list(Msg) ->
-	Msg.
+  Msg.
 
 
 %% get_version/1
@@ -136,7 +141,7 @@ to_list(Msg) ->
 -spec get_version(msg()) -> binary() | undefined.
 %% ====================================================================
 get_version(Msg) ->
-	?GV(version, Msg).
+  ?GV(version, Msg).
 
 
 %% get_timestamp/1
@@ -145,7 +150,7 @@ get_version(Msg) ->
 -spec get_timestamp(msg()) -> number() | undefined.
 %% ====================================================================
 get_timestamp(Msg) ->
-	?GV(timestamp, Msg).
+  ?GV(timestamp, Msg).
 
 
 %% set_host/2
@@ -154,7 +159,7 @@ get_timestamp(Msg) ->
 -spec set_host(Host :: binary() | list(), msg()) -> msg().
 %% ====================================================================
 set_host(Host, Msg)  ->
-	set_string_field(host, Host, Msg).
+  set_string_field(host, Host, Msg).
 
 
 %% get_host/1
@@ -163,7 +168,7 @@ set_host(Host, Msg)  ->
 -spec get_host(msg()) -> binary() | list().
 %% ====================================================================
 get_host(Msg) ->
-	?GV(host, Msg).
+  ?GV(host, Msg).
 
 
 %% set_short_message/2
@@ -172,7 +177,7 @@ get_host(Msg) ->
 -spec set_short_message(ShortMessage :: binary() | list(), msg()) -> msg().
 %% ====================================================================
 set_short_message(ShortMessage, Msg) ->
-	set_string_field(short_message, ShortMessage, Msg).
+  set_string_field(short_message, ShortMessage, Msg).
 
 
 %% get_short_message/1
@@ -181,7 +186,7 @@ set_short_message(ShortMessage, Msg) ->
 -spec get_short_message(msg()) -> binary() | list().
 %% ====================================================================
 get_short_message(Msg) ->
-	?GV(short_message, Msg).
+  ?GV(short_message, Msg).
 
 
 %% set_full_message/2
@@ -190,7 +195,7 @@ get_short_message(Msg) ->
 -spec set_full_message(FullMessage :: binary() | list(), msg()) -> msg().
 %% ====================================================================
 set_full_message(FullMessage, Msg) ->
-	set_string_field(full_message, FullMessage, Msg).
+  set_string_field(full_message, FullMessage, Msg).
 
 
 %% get_full_message/1
@@ -199,7 +204,7 @@ set_full_message(FullMessage, Msg) ->
 -spec get_full_message(msg()) -> binary() | list().
 %% ====================================================================
 get_full_message(Msg) ->
-	?GV(full_message, Msg).
+  ?GV(full_message, Msg).
 
 
 %% set_level/2
@@ -208,7 +213,7 @@ get_full_message(Msg) ->
 -spec set_level(Level :: integer(), msg()) -> msg().
 %% ====================================================================
 set_level(Level, Msg) when is_integer(Level) ->
-	set_number_field(level, Level, Msg).
+  set_number_field(level, Level, Msg).
 
 
 %% get_level/1
@@ -217,7 +222,7 @@ set_level(Level, Msg) when is_integer(Level) ->
 -spec get_level(msg()) -> integer().
 %% ====================================================================
 get_level(Msg) ->
-	?GV(level, Msg).
+  ?GV(level, Msg).
 
 
 %% set_additional/3
@@ -228,18 +233,18 @@ get_level(Msg) ->
 -spec set_additional(Key :: atom() | binary() | list(), Value :: term(), msg()) -> msg().
 %% ====================================================================
 set_additional('_id', _Value, _Msg) ->
-	throw("_id must not be used by client");
+  throw("_id must not be used by client");
 set_additional(<<"_id">>, _Value, _Msg) ->
-	throw("_id must not be used by client");
+  throw("_id must not be used by client");
 set_additional("_id", _Value, _Msg) ->
-	throw("_id must not be used by client");
+  throw("_id must not be used by client");
 set_additional(Key, Value, Msg) when is_binary(Value) or is_list(Value) ->
-	throw_if_not_additional_key(Key),
-	set_string_field(Key, Value, Msg);
+  throw_if_not_additional_key(Key),
+  set_string_field(Key, Value, Msg);
 set_additional(Key, Value, Msg) when is_number(Value) ->
-	throw_if_not_additional_key(Key),
-	set_number_field(Key, Value, Msg).
-	
+  throw_if_not_additional_key(Key),
+  set_number_field(Key, Value, Msg).
+
 
 %% get_additional/2
 %% ====================================================================
@@ -247,7 +252,7 @@ set_additional(Key, Value, Msg) when is_number(Value) ->
 -spec get_additional(Key :: atom() | binary() | list(), msg()) -> msg().
 %% ====================================================================
 get_additional(Key, Msg) when is_list(Key) or is_binary(Key) or is_atom(Key) ->
-	?GV(Key, Msg).
+  ?GV(Key, Msg).
 
 
 %% to_sendable/2
@@ -256,10 +261,10 @@ get_additional(Key, Msg) when is_list(Key) or is_binary(Key) or is_atom(Key) ->
 -spec to_sendable(msg(), compression()) -> term().
 %% ====================================================================
 to_sendable(Msg, Compression) ->
-	case ?GV(version, Msg) of
-		<<"1.1">> -> to_sendable_1_1(Msg, Compression);
-		Ver -> throw({invalid, {version, Ver}})
-	end.
+  case ?GV(version, Msg) of
+    <<"1.1">> -> to_sendable_1_1(Msg, Compression);
+    Ver -> throw({invalid, {version, Ver}})
+  end.
 
 
 %% ====================================================================
@@ -274,7 +279,7 @@ to_sendable(Msg, Compression) ->
 -spec new(version()) -> msg().
 %% ====================================================================
 new(Ver) ->
-	[{version, valid_version(Ver)}, {timestamp, now_gelf_micros()}].
+  [{version, valid_version(Ver)}, {timestamp, now_gelf_micros()}].
 
 
 %% valid_version/1
@@ -283,10 +288,10 @@ new(Ver) ->
 -spec valid_version(term()) -> binary().
 %% ====================================================================
 valid_version(<<"1.1">>) -> <<"1.1">>;
-valid_version("1.1") -> <<"1.1">>;
-valid_version('1.1') -> <<"1.1">>;
-valid_version(1.1) -> <<"1.1">>;
-valid_version(Ver) -> throw({invalid, {version, Ver}}).
+valid_version("1.1") ->     <<"1.1">>;
+valid_version('1.1') ->     <<"1.1">>;
+valid_version(1.1) ->       <<"1.1">>;
+valid_version(Ver) ->       throw({invalid, {version, Ver}}).
 
 
 %% valid_level/1
@@ -294,8 +299,8 @@ valid_version(Ver) -> throw({invalid, {version, Ver}}).
 %% @doc Return valid level. Throws if not valid
 -spec valid_level(term()) -> integer().
 %% ====================================================================
-valid_level(Level) when is_integer(Level), Level >= 0 ->	Level;
-valid_level(Level) ->										throw({invalid, {level, Level}}).
+valid_level(Level) when is_integer(Level), Level >= 0 ->  Level;
+valid_level(Level) ->                                     throw({invalid, {level, Level}}).
 
 
 %% valid_string/1
@@ -303,9 +308,9 @@ valid_level(Level) ->										throw({invalid, {level, Level}}).
 %% @doc Return valid string field. Throws if not valid
 -spec valid_string(term()) -> binary().
 %% ====================================================================
-valid_string(String) when is_list(String) ->	unicode:characters_to_binary(String, utf8, utf8);
-valid_string(Bin) when is_binary(Bin) ->		Bin;
-valid_string(Term) ->							throw({invalid, {string_field, Term}}).
+valid_string(String) when is_list(String) ->  unicode:characters_to_binary(String, utf8, utf8);
+valid_string(Bin) when is_binary(Bin) ->      Bin;
+valid_string(Term) ->                         throw({invalid, {string_field, Term}}).
 
 
 %% valid_key/1
@@ -313,9 +318,9 @@ valid_string(Term) ->							throw({invalid, {string_field, Term}}).
 %% @doc Return valid key. Throws if not valid
 -spec valid_key(term()) -> binary().
 %% ====================================================================
-valid_key(K) when is_list(K) ->					unicode:characters_to_binary(K, utf8, utf8);
-valid_key(K) when is_binary(K) or is_atom(K) ->	K;
-valid_key(K) ->									throw({invalid, {key, K}}).
+valid_key(K) when is_list(K) ->                 unicode:characters_to_binary(K, utf8, utf8);
+valid_key(K) when is_binary(K) or is_atom(K) -> K;
+valid_key(K) ->                                 throw({invalid, {key, K}}).
 
 
 %% valid_timestamp/1
@@ -324,7 +329,7 @@ valid_key(K) ->									throw({invalid, {key, K}}).
 -spec valid_timestamp(term()) -> number().
 %% ====================================================================
 valid_timestamp(T) when is_number(T), T >= 0 -> T;
-valid_timestamp(T) -> throw({invalid, {timestamp, T}}).
+valid_timestamp(T) ->                           throw({invalid, {timestamp, T}}).
 
 
 %% now_gelf_micros/0
@@ -333,7 +338,7 @@ valid_timestamp(T) -> throw({invalid, {timestamp, T}}).
 -spec now_gelf_micros() -> number().
 %% ====================================================================
 now_gelf_micros() ->
-	protofy_time:now_timestamp_micros() / 1000000.
+  protofy_time:now_timestamp_micros() / 1000000.
 
 
 %% throw_if_not_additional_key/1
@@ -341,31 +346,31 @@ now_gelf_micros() ->
 %% @doc Throw if not valid additional key.
 -spec throw_if_not_additional_key(term()) -> ok.
 %% ====================================================================
-throw_if_not_additional_key('_id') ->					throw({invalid, {key, '_id'}, reserved});
-throw_if_not_additional_key('_ttl') ->					throw({invalid, {key, '_ttl'}, reserved});
-throw_if_not_additional_key('_source') ->				throw({invalid, {key, '_source'}, reserved});
-throw_if_not_additional_key('_all') ->					throw({invalid, {key, '_all'}, reserved});
-throw_if_not_additional_key('_index') ->				throw({invalid, {key, '_index'}, reserved});
-throw_if_not_additional_key('_type') ->					throw({invalid, {key, '_type'}, reserved});
-throw_if_not_additional_key('_score') ->				throw({invalid, {key, '_score'}, reserved});
+throw_if_not_additional_key('_id') ->                 throw({invalid, {key, '_id'}, reserved});
+throw_if_not_additional_key('_ttl') ->                throw({invalid, {key, '_ttl'}, reserved});
+throw_if_not_additional_key('_source') ->             throw({invalid, {key, '_source'}, reserved});
+throw_if_not_additional_key('_all') ->                throw({invalid, {key, '_all'}, reserved});
+throw_if_not_additional_key('_index') ->              throw({invalid, {key, '_index'}, reserved});
+throw_if_not_additional_key('_type') ->               throw({invalid, {key, '_type'}, reserved});
+throw_if_not_additional_key('_score') ->              throw({invalid, {key, '_score'}, reserved});
 throw_if_not_additional_key(Key) when is_atom(Key) ->	throw_if_not_additional_key(atom_to_list(Key));
-throw_if_not_additional_key(<<"_id">>) ->				throw({invalid, {key, <<"_id">>}, reserved});
-throw_if_not_additional_key(<<"_ttl">>) ->				throw({invalid, {key, <<"_ttl">>}, reserved});
-throw_if_not_additional_key(<<"_source">>) ->			throw({invalid, {key, <<"_source">>}, reserved});
-throw_if_not_additional_key(<<"_all">>) ->				throw({invalid, {key, <<"_all">>}, reserved});
-throw_if_not_additional_key(<<"_index">>) ->			throw({invalid, {key, <<"_index">>}, reserved});
-throw_if_not_additional_key(<<"_type">>) ->				throw({invalid, {key, <<"_type">>}, reserved});
-throw_if_not_additional_key(<<"_score">>) ->			throw({invalid, {key, <<"_score">>}, reserved});
-throw_if_not_additional_key(<<$_,_/binary>>) ->			ok;
-throw_if_not_additional_key("_id") ->					throw({invalid, {key, "_id"}, reserved});
-throw_if_not_additional_key("_ttl") ->					throw({invalid, {key, "_ttl"}, reserved});
-throw_if_not_additional_key("_source") ->				throw({invalid, {key, "_source"}, reserved});
-throw_if_not_additional_key("_all") ->					throw({invalid, {key, "_all"}, reserved});
-throw_if_not_additional_key("_index") ->				throw({invalid, {key, "_index"}, reserved});
-throw_if_not_additional_key("_type") ->					throw({invalid, {key, "_type"}, reserved});
-throw_if_not_additional_key("_score") ->				throw({invalid, {key, "_score"}, reserved});
-throw_if_not_additional_key([$_|_]) ->					ok;
-throw_if_not_additional_key(Key) ->						throw({invalid, {key, Key}, prefix}).
+throw_if_not_additional_key(<<"_id">>) ->             throw({invalid, {key, <<"_id">>}, reserved});
+throw_if_not_additional_key(<<"_ttl">>) ->            throw({invalid, {key, <<"_ttl">>}, reserved});
+throw_if_not_additional_key(<<"_source">>) ->         throw({invalid, {key, <<"_source">>}, reserved});
+throw_if_not_additional_key(<<"_all">>) ->            throw({invalid, {key, <<"_all">>}, reserved});
+throw_if_not_additional_key(<<"_index">>) ->          throw({invalid, {key, <<"_index">>}, reserved});
+throw_if_not_additional_key(<<"_type">>) ->           throw({invalid, {key, <<"_type">>}, reserved});
+throw_if_not_additional_key(<<"_score">>) ->          throw({invalid, {key, <<"_score">>}, reserved});
+throw_if_not_additional_key(<<$_,_/binary>>) ->       ok;
+throw_if_not_additional_key("_id") ->                 throw({invalid, {key, "_id"}, reserved});
+throw_if_not_additional_key("_ttl") ->                throw({invalid, {key, "_ttl"}, reserved});
+throw_if_not_additional_key("_source") ->             throw({invalid, {key, "_source"}, reserved});
+throw_if_not_additional_key("_all") ->                throw({invalid, {key, "_all"}, reserved});
+throw_if_not_additional_key("_index") ->              throw({invalid, {key, "_index"}, reserved});
+throw_if_not_additional_key("_type") ->               throw({invalid, {key, "_type"}, reserved});
+throw_if_not_additional_key("_score") ->              throw({invalid, {key, "_score"}, reserved});
+throw_if_not_additional_key([$_|_]) ->                ok;
+throw_if_not_additional_key(Key) ->                   throw({invalid, {key, Key}, prefix}).
 
 
 %% throw_if_not_present/2
@@ -374,10 +379,10 @@ throw_if_not_additional_key(Key) ->						throw({invalid, {key, Key}, prefix}).
 -spec throw_if_not_present(Key :: atom() | binary() | list(), msg()) -> ok.
 %% ====================================================================
 throw_if_not_present(Key, Msg) ->
-	case ?GV(Key, Msg) of
-		undefined -> throw({missing, {Key, Msg}});
-		_ -> ok
-	end.
+  case ?GV(Key, Msg) of
+    undefined -> throw({missing, {Key, Msg}});
+    _ -> ok
+  end.
 
 
 %% set_number_field/3
@@ -386,7 +391,7 @@ throw_if_not_present(Key, Msg) ->
 -spec set_number_field(Key :: atom() | binary() | list(), Value :: number(), msg()) -> msg().
 %% ====================================================================
 set_number_field(Key, Value, Msg) when is_number(Value) ->
-	set_field(Key, Value, Msg).
+  set_field(Key, Value, Msg).
 
 %% set_string_field/3
 %% ====================================================================
@@ -394,7 +399,7 @@ set_number_field(Key, Value, Msg) when is_number(Value) ->
 -spec set_string_field(Key :: atom() | binary() | list(), Value :: binary() | list(), msg()) -> msg().
 %% ====================================================================
 set_string_field(Key, Value, Msg) when is_list(Value) or is_binary(Value) ->
-	set_field(Key, Value, Msg).
+  set_field(Key, Value, Msg).
 
 
 %% set_field/3
@@ -403,24 +408,24 @@ set_string_field(Key, Value, Msg) when is_list(Value) or is_binary(Value) ->
 -spec set_field(Key :: atom() | binary() | list(), Value :: term(), msg()) -> msg().
 %% ====================================================================
 set_field(Key, Value, Msg) when is_list(Key) ->
-	try list_to_existing_atom(Key) of
-		AtomKey ->
-			[{Key, Value} | [P || {K, _}=P <- Msg, (K /= AtomKey) and (K /= Key)]]
-	catch
-		error:badarg ->
-			[{Key, Value} | proplists:delete(Key, Msg)]
-	end;
+  try list_to_existing_atom(Key) of
+    AtomKey ->
+      [{Key, Value} | [P || {K, _}=P <- Msg, (K /= AtomKey) and (K /= Key)]]
+  catch
+    error:badarg ->
+      [{Key, Value} | proplists:delete(Key, Msg)]
+  end;
 set_field(Key, Value, Msg) when is_atom(Key) ->
-	BinKey = atom_to_binary(Key, utf8),
-	[{Key, Value} | [P || {K, _}=P <- Msg, (K /= BinKey) and (K /= Key)]];
+  BinKey = atom_to_binary(Key, utf8),
+  [{Key, Value} | [P || {K, _}=P <- Msg, (K /= BinKey) and (K /= Key)]];
 set_field(Key, Value, Msg) when is_binary(Key) ->
-	try binary_to_existing_atom(Key, utf8) of
-		AtomKey ->
-			[{Key, Value} | [P || {K, _}=P <- Msg, (K /= AtomKey) and (K /= Key)]]
-	catch
-		error:badarg ->
-			[{Key, Value} | proplists:delete(Key, Msg)]
-	end.
+  try binary_to_existing_atom(Key, utf8) of
+    AtomKey ->
+      [{Key, Value} | [P || {K, _}=P <- Msg, (K /= AtomKey) and (K /= Key)]]
+  catch
+    error:badarg ->
+      [{Key, Value} | proplists:delete(Key, Msg)]
+  end.
 
 
 %% to_sendable_1_1/2
@@ -429,11 +434,11 @@ set_field(Key, Value, Msg) when is_binary(Key) ->
 -spec to_sendable_1_1(msg(), compression()) -> binary().
 %% ====================================================================
 to_sendable_1_1(Msg, Compression) ->
-	throw_if_not_present(host, Msg),
-	throw_if_not_present(short_message, Msg),
-	throw_if_not_present(full_message, Msg),
-	throw_if_not_present(timestamp, Msg),
-	compress(jiffy:encode({Msg}, [force_utf8]), Compression).
+  throw_if_not_present(host, Msg),
+  throw_if_not_present(short_message, Msg),
+  throw_if_not_present(full_message, Msg),
+  throw_if_not_present(timestamp, Msg),
+  compress(jiffy:encode({Msg}, [force_utf8]), Compression).
 
 
 %% compress/2
@@ -442,13 +447,13 @@ to_sendable_1_1(Msg, Compression) ->
 -spec compress(Encoded :: term(), compression()) -> binary().
 %% ====================================================================
 compress(Encoded, gzip) ->
-	zlib:gzip(Encoded);
+  zlib:gzip(Encoded);
 compress(Encoded, zlib) ->
-	zlib:compress(Encoded);
+  zlib:compress(Encoded);
 compress(Encoded, none) when is_list(Encoded) ->
-	unicode:characters_to_binary(Encoded, utf8, utf8);
+  unicode:characters_to_binary(Encoded, utf8, utf8);
 compress(Encoded, none) when is_binary(Encoded) ->
-	Encoded.
+  Encoded.
 
 
 %% do_from_list/2
@@ -457,12 +462,12 @@ compress(Encoded, none) when is_binary(Encoded) ->
 -spec do_from_list(Input :: list(), A :: list()) -> msg(). 
 %% ====================================================================
 do_from_list([], A) ->
-	case ?GV(timestamp, A) of
-		undefined -> [{timestamp, now_gelf_micros()}|A];
-		_ -> A
-	end;
+  case ?GV(timestamp, A) of
+    undefined -> [{timestamp, now_gelf_micros()}|A];
+    _ -> A
+  end;
 do_from_list([{K,V}|T], A) ->
-	do_from_list(T, from_list_field(K, V, A)).
+  do_from_list(T, from_list_field(K, V, A)).
 
 
 %% from_list_field/3
@@ -471,15 +476,15 @@ do_from_list([{K,V}|T], A) ->
 -spec from_list_field(Key :: atom() | binary() | list(), Value :: term(), A :: list()) -> list().
 %% ====================================================================
 from_list_field(Key, Value, A) ->
-	case valid_key(Key) of
-		timestamp -> [{timestamp, valid_timestamp(Value)} | A];
-		level -> [{level, valid_level(Value)} | A];
-		short_message -> [{short_message, valid_string(Value)} | A];
-		full_message -> [{full_message, valid_string(Value)} | A];
-		version -> [{version, valid_version(Value)}|A];
-		host -> [{host, valid_string(Value)} | A];
-		_ -> add_additional(Key, Value, A)
-	end.
+  case valid_key(Key) of
+    timestamp ->      [{timestamp, valid_timestamp(Value)} | A];
+    level ->          [{level, valid_level(Value)} | A];
+    short_message ->  [{short_message, valid_string(Value)} | A];
+    full_message ->   [{full_message, valid_string(Value)} | A];
+    version ->        [{version, valid_version(Value)}|A];
+    host ->           [{host, valid_string(Value)} | A];
+    _ ->              add_additional(Key, Value, A)
+  end.
 
 
 %% add_additional/3
@@ -488,11 +493,11 @@ from_list_field(Key, Value, A) ->
 -spec add_additional(Key :: atom() | binary() | list(), Value :: term(), Msg :: msg()) -> msg().
 %% ====================================================================
 add_additional(Key, Value, Msg) when is_binary(Value) or is_list(Value) ->
-	throw_if_not_additional_key(Key),
-	[{Key, valid_string(Value)} | Msg];
+  throw_if_not_additional_key(Key),
+  [{Key, valid_string(Value)} | Msg];
 add_additional(Key, Value, Msg) when is_number(Value) ->
-	throw_if_not_additional_key(Key),
-	[{Key, Value} | Msg].
+  throw_if_not_additional_key(Key),
+  [{Key, Value} | Msg].
 
 
 %% shorten/2
@@ -501,12 +506,12 @@ add_additional(Key, Value, Msg) when is_number(Value) ->
 -spec shorten(Full :: binary() | list() | atom(), Length :: non_neg_integer()) -> binary().
 %% ====================================================================
 shorten(Full, Length) when is_binary(Full) ->
-	shorten(unicode:characters_to_list(Full), Length);
+  shorten(unicode:characters_to_list(Full), Length);
 shorten(Full, Length) when is_list(Full) ->
-	unicode:characters_to_binary(string:sub_string(Full, 1, Length), utf8,  utf8);
+  unicode:characters_to_binary(string:sub_string(Full, 1, Length), utf8,  utf8);
 shorten(Full, Length) when is_atom(Full) ->
-	shorten(atom_to_list(Full), Length);
+  shorten(atom_to_list(Full), Length);
 shorten(Full, Length) ->
-	shorten(lists:flatten(io_lib:format("~p", [Full])), Length).
+  shorten(lists:flatten(io_lib:format("~p", [Full])), Length).
 
 

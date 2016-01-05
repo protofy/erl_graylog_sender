@@ -65,26 +65,52 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([open/1,
-		 close/1,
-		 send/2]).
+-export([
+  open/1,
+  close/1,
+  send/2
+]).
 
 -define(DEFAULT_IP_VERSION, inet).
 
-open(Opts) ->
-	Version = case ?GV(ip_version, Opts, default) of
-				  ipv4 -> inet;
-				  ipv6 -> inet6;
-				  default -> ?DEFAULT_IP_VERSION
-			  end,
-	SocketOpts = [Version, binary, {packet, 0} | ?GV(socket_opts, Opts, [])],
-	gen_tcp:connect(?GV(addr, Opts), ?GV(port, Opts), SocketOpts).
-	
-close(Socket) ->
-	gen_tcp:close(Socket).
+-type opt() :: {ip_version, ipv4 | ipv6 | default}
+             | {addr, inet:ip_address() | inet:hostname()}
+             | {port, inet:port_number()}
+             | gen_tcp:option().
 
+%% open/1
+%% ====================================================================
+%% @doc Open TCP connection
+-spec open([opt()]) -> {ok, gen_tcp:socket()} | {error, inet:posix()}.
+%% ====================================================================
+open(Opts) ->
+  Version = case ?GV(ip_version, Opts, default) of
+              ipv4 -> inet;
+              ipv6 -> inet6;
+              default -> ?DEFAULT_IP_VERSION
+            end,
+  SocketOpts = [Version, binary, {packet, 0} | ?GV(socket_opts, Opts, [])],
+  gen_tcp:connect(?GV(addr, Opts), ?GV(port, Opts), SocketOpts).
+
+
+%% close/1
+%% ====================================================================
+%% @doc Close TCP connection
+-spec close(gen_tcp:socket()) -> ok.
+%% ====================================================================
+close(Socket) ->
+  gen_tcp:close(Socket).
+
+
+%% send/2
+%% ====================================================================
+%% @doc Send Packet (e.g. the graylog message) via Socket
+-spec send(gen_tcp:socket(), Packet :: iodata()) -> ok | {error, Reason} when
+  Reason :: closed
+          | inet:posix().
+%% ====================================================================
 send(Socket, Packet) ->
-	gen_tcp:send(Socket, <<Packet/binary,0>>).
+  gen_tcp:send(Socket, <<Packet/binary,0>>).
 
 %% ====================================================================
 %% Internal functions
