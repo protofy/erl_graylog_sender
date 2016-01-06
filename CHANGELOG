@@ -1,3 +1,13 @@
+1.1.0
+------
+- Erl_graylog_sender option send_mode added.
+    fire_and_forget (default) -> always returns ok (same as 1.0.x)
+    validate_message -> validate the message format in case gelf is used
+    ensure_delivery -> validate message and ensure deliver succeeded
+        See src/erl_graylog_sender.erl
+- Development backend services added. See 'dev/services.sh help'
+- Dependencies updated
+
 1.0.0
 ------
 - Travis support added
