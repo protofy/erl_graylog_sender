@@ -20,3 +20,4 @@ test/ct/config/*.config
 .DS_Store
 .rebar
 /ebin
+*.tfstate*
