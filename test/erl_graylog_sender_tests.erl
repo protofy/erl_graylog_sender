@@ -45,7 +45,7 @@
 
 -export([]).
 
--record(state, {compression, count, sender_ref, sender_mod, format, host}).
+-record(state, {compression, count, sender_ref, sender_mod, format, host, send_mode}).
 
 %% ====================================================================
 %% API functions
@@ -107,6 +107,9 @@ set_opt_3_get_opt_2_test_() ->
 	R4 = S(format, gelf),
 	R5 = G(compression),
 	R6 = G(format),
+  R7 = G(send_mode),
+  R8 = S(send_mode, ensure_delivery),
+  R9 = G(send_mode),
 	unmock(erl_graylog_tcp_sender),
 	[
 	 {"before compression none", ?_assertEqual(none, R1)},
@@ -114,7 +117,10 @@ set_opt_3_get_opt_2_test_() ->
 	 {"set compression gzip", ?_assertEqual(ok, R3)}, 
 	 {"set format gelf", ?_assertEqual(ok, R4)}, 
 	 {"after compression gzip", ?_assertEqual(gzip, R5)},
-	 {"after format gelf", ?_assertEqual(gelf, R6)}
+	 {"after format gelf", ?_assertEqual(gelf, R6)},
+   {"before send_mode fire_and_forget", ?_assertEqual(fire_and_forget, R7)},
+   {"set send_mode ensure_delivery", ?_assertEqual(ok, R8)},
+   {"after send_mode ensure_delivery", ?_assertEqual(ensure_delivery, R9)}
 	].
 	
 
@@ -129,6 +135,47 @@ send_2_test_() ->
 	 {"started", ?_assertEqual(ok, R1)},
 	 {"received", ?_assertMatch({mocked_tcp_sent, _}, R)}
 	].
+
+send_2_gelf_fire_and_forget_test_() ->
+  {R1, R2, R3, R4} = send_2_gelf_test_helper(fire_and_forget),
+  [
+    {"sent OK", ?_assertEqual(ok, R1)},
+    {"received OK", ?_assertMatch({mocked_tcp_sent, _}, R2)},
+    {"sent invalid", ?_assertEqual(ok, R3)},
+    {"received invalid", ?_assertMatch({error, timeout}, R4)}
+  ].
+
+send_2_gelf_validate_message_test_() ->
+  {R1, R2, R3, R4} = send_2_gelf_test_helper(validate_message),
+  [
+    {"sent OK", ?_assertEqual(ok, R1)},
+    {"received OK", ?_assertMatch({mocked_tcp_sent, _}, R2)},
+    {"sent invalid", ?_assertMatch({error, {invalid, {key, _}, _}}, R3)},
+    {"received invalid", ?_assertMatch({error, timeout}, R4)}
+  ].
+
+send_2_gelf_ensure_delivery_test_() ->
+  {R1, R2, R3, R4} = send_2_gelf_test_helper(ensure_delivery),
+  [
+    {"sent OK", ?_assertEqual({ok, sent}, R1)},
+    {"received OK", ?_assertMatch({mocked_tcp_sent, _}, R2)},
+    {"sent invalid", ?_assertMatch({error, {invalid, {key, _}, _}}, R3)},
+    {"received invalid", ?_assertMatch({error, timeout}, R4)}
+  ].
+
+
+send_2_gelf_test_helper(Mode) ->
+  mock_erl_graylog_tcp_sender({ok, sent}),
+  ConnOpts = [{type, tcp}],
+  Opts = [{connection, ConnOpts}, {compression, none}, {format, gelf}, {host, <<"testhost">>}],
+  {ok, Pid} = erl_graylog_sender:start_link(Opts),
+  erl_graylog_sender:set_opt(Pid, send_mode, Mode),
+  R1 = erl_graylog_sender:send(Pid, [{full_message, <<"1">>}]),
+  R2 = rcv(100),
+  R3 = erl_graylog_sender:send(Pid, [{invalid, <<"invalid">>}]),
+  R4 = rcv(100),
+  unmock(erl_graylog_tcp_sender),
+  {R1, R2, R3, R4}.
 
 
 %% Test singleton: send/1, set_opt/2, get_opt/1
@@ -222,21 +269,9 @@ handle_call_stop_test() ->
 
 %% Test handle_cast/2
 %% ====================================================================
-handle_cast_test() ->
-	Ref = {echo, self()},
-	State = #state{ compression = none,
-					count = 0,
-					sender_ref = Ref,
-					sender_mod = ?MODULE,
-					format = raw,
-					host = <<"testhost">> },
-	Msg = <<"Casted">>,
-	F = fun erl_graylog_sender:handle_cast/2,
-	?assertEqual({noreply, State}, F({send, Msg}, State)),
-	?assertEqual({noreply, State}, F(something, State)),
-	R = rcv(100),
-	?assertMatch({sent, Ref, Bin} when is_binary(Bin), R).
-	
+handle_cast_test_() ->
+  ?_assertEqual({noreply, test}, erl_graylog_sender:handle_cast(cast, test)).
+
 
 %% Test handle_info/2
 %% ====================================================================
@@ -260,50 +295,60 @@ code_change_test_() ->
 %% Test internal functions
 %% ====================================================================
 
-%% Tests for do_send/5
+%% Tests for do_send/2
 %% ====================================================================
-do_send_binary_gelf_test() ->
-	Msg1 = <<"Test Message 1">>,
-	D = do_send_gelf_and_process(Msg1),
-	?assertEqual(Msg1, ?GV(<<"full_message">>, D)),
-	?assertEqual(Msg1, ?GV(<<"short_message">>, D)),
-	?assertEqual(<<"testhost">>, ?GV(<<"host">>, D)).
+do_send_2_test_() ->
+  S = #state{
+    compression = none,
+    sender_ref = return,
+    sender_mod = ?MODULE,
+    format = gelf,
+    host = <<"testhost">>,
+    send_mode = validate_message
+  },
+  F = fun(Msg) -> erl_graylog_sender:do_send(Msg, S) end,
+  Msg = [{full_message, <<"Full Message">>}],
+  [
+    {"ok", ?_assertEqual(ok, F(Msg))},
+    {"invalid", ?_assertMatch({error, {invalid, {key, _}, prefix}}, F([{invalid_additional, <<"Invalid">>}|Msg]))}
+  ].
 
-do_send_list_gelf_no_host_test() ->
-	Msg1 = [{full_message, <<"Test Message 1">>}, {short_message, <<"Shrt Msg">>}, {level, 1}],
-	D = do_send_gelf_and_process(Msg1),
-	?assertEqual(<<"Test Message 1">>, ?GV(<<"full_message">>, D)),
-	?assertEqual(<<"Shrt Msg">>, ?GV(<<"short_message">>, D)),
-	?assertEqual(1, ?GV(<<"level">>, D)),
-	?assertEqual(<<"testhost">>, ?GV(<<"host">>, D)).
-	
-do_send_list_gelf_with_host_test() ->
-	Msg1 = [{full_message, <<"Test Message 1">>}, {short_message, <<"Shrt Msg">>}, {level, 1}, {host, <<"some">>}],
-	D = do_send_gelf_and_process(Msg1),
-	?assertEqual(<<"Test Message 1">>, ?GV(<<"full_message">>, D)),
-	?assertEqual(<<"Shrt Msg">>, ?GV(<<"short_message">>, D)),
-	?assertEqual(1, ?GV(<<"level">>, D)),
-	?assertEqual(<<"some">>, ?GV(<<"host">>, D)).
+%% Tests for send_sendable/4
+%% ====================================================================
+send_sendable_test_() ->
+  {ok, Sendable} = erl_graylog_sender:sendable(<<"body">>, none, raw, undefined),
+  F = fun(Mode) -> erl_graylog_sender:send_sendable(?MODULE, return, Sendable, Mode) end,
+  [
+    {"fire_and_forget", ?_assertEqual(ok, F(fire_and_forget))},
+    {"validate_message", ?_assertEqual(ok, F(validate_message))},
+    {"ensure_delivery", ?_assertEqual({sent, return, Sendable}, F(ensure_delivery))}
+  ].
 
-do_send_raw_test_() ->
-	F = fun(Msg) -> erl_graylog_sender:do_send(Msg, none, return, ?MODULE, raw, <<"testhost">>) end,
-	Msg1 = <<"Raw Test">>,
-	[
-	 {"binary", ?_assertEqual({sent, return, Msg1}, F(Msg1))},
-	 {"atom", ?_assertEqual({sent, return, <<"some">>}, F(some))},
-	 {"integer", ?_assertEqual({sent, return, <<"42">>}, F(42))},
-	 {"tuple", ?_assertEqual({sent, return, <<"{4,2}">>}, F({4,2}))}
-	].
-
-do_send_gelf_and_process(Msg) ->
-	R = erl_graylog_sender:do_send(Msg, none, return, ?MODULE, gelf, <<"testhost">>),
-	?assertMatch({sent, return, Bin} when is_binary(Bin), R),
-	{sent, return, Bin} = R,
-	{D} = jiffy:decode(Bin),
-	?assert(proplists:is_defined(<<"timestamp">>, D)),
-	?assertEqual(<<"1.1">>, ?GV(<<"version">>, D)),
-	D.
-
+%% Tests for sendable/4
+%% ====================================================================
+%% The actual conversion is tested in erl_graylog_gelf_tests
+sendable_test_() ->
+  Host = <<"sendable_4_host">>,
+  Body = <<"body">>,
+  Msg = [{full_message, Body}, {<<"_extra1">>, <<"extra1">>}],
+  MsgWithHost = [{host, <<"set host">>}|Msg],
+  F = fun(X, Fmt) -> erl_graylog_sender:sendable(X, none, Fmt, Host) end,
+  T = fun(X, Fmt) -> ?_assertMatch({ok, B} when is_binary(B), F(X, Fmt)) end,
+  THost = fun(X, Fmt, E) ->
+    {ok, R} = F(X, Fmt),
+    {Data} = jiffy:decode(R),
+    A = ?GV(<<"host">>, Data),
+    ?_assertEqual(E, A)
+  end,
+  [
+    {"binary no host gelf", T(Body, gelf)},
+    {"list no host gelf", T(Msg, gelf)},
+    {"host set", THost(Msg, gelf, Host)},
+    {"list host gelf", T(MsgWithHost, gelf)},
+    {"binary raw", T(Body, raw)},
+    {"list raw", T(Msg, raw)},
+    {"invalid", ?_assertMatch({error, {invalid, _}}, F(Msg, invalid))}
+  ].
 
 %% Test valid_compression/1
 %% ====================================================================
@@ -331,6 +376,20 @@ valid_format_test_() ->
 	 {"invalid", ?_assertException(throw, {invalid, {format, _}}, F(undefined))}
 	].
 
+%% Test valid_mode/1
+%% ====================================================================
+valid_mode_test_() ->
+  F = fun erl_graylog_sender:valid_send_mode/1,
+  T = fun(E, X) -> ?_assertEqual(E, F(X)) end,
+  [
+    {"default", T(fire_and_forget, default)},
+    {"fire_and_forget", T(fire_and_forget, fire_and_forget)},
+    {"validate_message", T(validate_message, validate_message)},
+    {"ensure_delivery", T(ensure_delivery, ensure_delivery)},
+    {"invalid", ?_assertException(throw, {invalid, {send_mode, _}}, F(undefined))}
+  ].
+
+
 %% ====================================================================
 %% Helpers
 %% ====================================================================
@@ -338,10 +397,13 @@ valid_format_test_() ->
 %% Pseudo sender that can be used for testing 
 %% ====================================================================
 mock_erl_graylog_tcp_sender() ->
+  mock_erl_graylog_tcp_sender(ok).
+
+mock_erl_graylog_tcp_sender(SendReturnValue) ->
 	ok = meck:new(erl_graylog_tcp_sender, []),
 	ok = meck:expect(erl_graylog_tcp_sender, open, fun(Opts) -> {ok, {mocked_tcp, Opts}} end),
 	Self = self(),
-	ok = meck:expect(erl_graylog_tcp_sender, send, fun({mocked_tcp, _}, Msg) -> Self ! {mocked_tcp_sent, Msg}, ok end),
+	ok = meck:expect(erl_graylog_tcp_sender, send, fun({mocked_tcp, _}, Msg) -> Self ! {mocked_tcp_sent, Msg}, SendReturnValue end),
 	ok = meck:expect(erl_graylog_tcp_sender, close, fun({mocked_tcp, _}) -> Self ! mocked_tcp_close, ok end),
 	ok.
 
@@ -382,11 +444,15 @@ close({echo, To} = Ref) ->
 open(Opts) ->
 	{opened, Opts}.
 
-rcv(0) ->
-	{error, timeout};
 rcv(N) ->
-	receive
-		X -> X
-	after 10 -> rcv(N-1)
-	end.
+  protofy_test_util:rcv(N).
+
+
+%% rcv(0) ->
+%% 	{error, timeout};
+%% rcv(N) ->
+%% 	receive
+%% 		X -> X
+%% 	after 10 -> rcv(N-1)
+%% 	end.
 

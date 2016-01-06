@@ -57,12 +57,20 @@
 %%   - values : default | raw | gelf. 
 %%
 %% - host - optional, default: hostname of this machine
+%%
+%% - send_mode - optional, default: fire_and_forget
+%%  - values:
+%%      fire_and_forget (always returns ok)
+%%      validate_message (returns {error, reason()} if message is malformed
+%%      ensure_delivery (validates message and returns an error if message was not delivered)
 %% 
 %% You can change compression and format of a running sender by using set_opt/2, set_opt/3. 
 %% '''
 %%
 %% == Sending ==
 %% If you've started the sender as singleton use send/1, otherwise use send/2.
+%% If you want to send synchroniously, you can use send_sync/1 and send_sync/2. Only use these if you actually want to do something with the return value.
+%%
 %% === Notes ===
 %% - If you're using GELF, the host field will be set by the sender unless you add it to your message.
 %% 
@@ -100,20 +108,24 @@
 						| {socket_opts, [gen_tcp:option() | gen_udp:option()]}.
 -type compression() :: none | gzip | zlib.
 -type format() :: raw | gelf.
--type msg() :: term(). % @todo json term 
+-type msg() :: term(). % @todo json term
+-type send_mode() :: fire_and_forget | validate_message | ensure_delivery.
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
--export([start_link/1,
-		 stop/0, stop/1,
-		 get_opt/1, get_opt/2,
-		 set_opt/2, set_opt/3,
-		 send/1, send/2]).
+-export([
+  start_link/1,
+  stop/0, stop/1,
+  get_opt/1, get_opt/2,
+  set_opt/2, set_opt/3,
+  send/1, send/2
+]).
 
 -define(SERVER, ?MODULE).
 -define(DEFAULT_COMPRESSION, gzip).
 -define(DEFAULT_FORMAT, gelf).
+-define(DEFAULT_MODE, fire_and_forget).
 
 %% start_link/1
 %% ====================================================================
@@ -180,12 +192,15 @@ set_opt(Key, Value) ->
 %% @doc Set option of running server identified by Ref
 -spec set_opt(server_ref(), Key, term()) -> ok when
 	Key :: compression
-		 | format.
+		   | format
+       | send_mode.
 %% ====================================================================
 set_opt(Ref, compression, Compression) ->
 	gen_server:call(Ref, {set_opt, compression, valid_compression(Compression)});
 set_opt(Ref, format, Format) ->
-	gen_server:call(Ref, {set_opt, format, valid_format(Format)}).
+	gen_server:call(Ref, {set_opt, format, valid_format(Format)});
+set_opt(Ref, send_mode, SendMode) ->
+  gen_server:call(Ref, {set_opt, send_mode, valid_send_mode(SendMode)}).
 
 
 %% send/1
@@ -203,13 +218,13 @@ send(Msg) ->
 -spec send(server_ref(), msg()) -> ok.
 %% ====================================================================
 send(Ref, Msg) ->
-	gen_server:cast(Ref, {send, Msg}).
+	gen_server:call(Ref, {send, Msg}).
 
 
 %% ====================================================================
 %% Behavioural functions 
 %% ====================================================================
--record(state, {compression, count, sender_ref, sender_mod, format, host}).
+-record(state, {compression, count, sender_ref, sender_mod, format, host, send_mode}).
 
 %% init/1
 %% ====================================================================
@@ -230,16 +245,18 @@ init([Opts]) ->
 					udp -> erl_graylog_udp_sender
 				end,
 	{ok, SenderRef} = SenderMod:open(ConnectionOpts),
-    {ok, #state{
-				compression = valid_compression(?GV(compression, Opts, ?DEFAULT_COMPRESSION)),
-				count = 0,
-				sender_ref = SenderRef,
-				sender_mod = SenderMod,
-				format = valid_format(?GV(format, Opts, ?DEFAULT_FORMAT)),
-				host = case ?GV(host, Opts) of
-						   undefined -> {ok, Hostname} = inet:gethostname(), list_to_binary(Hostname);
-						   HostOpt -> HostOpt
-					   end}}.
+  {ok, #state{
+    compression = valid_compression(?GV(compression, Opts, ?DEFAULT_COMPRESSION)),
+    count = 0,
+  	sender_ref = SenderRef,
+		sender_mod = SenderMod,
+		format = valid_format(?GV(format, Opts, ?DEFAULT_FORMAT)),
+		host = case ?GV(host, Opts) of
+             undefined -> {ok, Hostname} = inet:gethostname(), list_to_binary(Hostname);
+             HostOpt -> HostOpt
+           end,
+    send_mode = valid_send_mode(?GV(send_mode, Opts, ?DEFAULT_MODE))
+  }}.
 
 
 %% handle_call/3
@@ -259,14 +276,23 @@ init([Opts]) ->
 	Timeout :: non_neg_integer() | infinity,
 	Reason :: term().
 %% ====================================================================
+handle_call({send, Msg}, _From, #state{send_mode = fire_and_forget}=S) ->
+  proc_lib:spawn(fun() -> do_send(Msg, S) end),
+  {reply, ok, S};
+handle_call({send, Msg}, From, S) ->
+  ?GEN_SERVER_ASYNC_REPLY(From, do_send(Msg, S), S);
 handle_call({get_opt, compression}, _From, #state{compression = Comp} = S) ->
 	{reply, Comp, S};
 handle_call({get_opt, format}, _From, #state{format = Fmt} = S) ->
 	{reply, Fmt, S};
+handle_call({get_opt, send_mode}, _From, #state{send_mode = SendMode} = S) ->
+  {reply, SendMode, S};
 handle_call({set_opt, compression, Comp}, _From, S) ->
 	{reply, ok, S#state{compression = Comp}};
 handle_call({set_opt, format, Fmt}, _From, S) ->
 	{reply, ok, S#state{format = Fmt}};
+handle_call({set_opt, send_mode, SendMode}, _From, S) ->
+  {reply, ok, S#state{send_mode = SendMode}};
 handle_call(stop, _From, #state{sender_mod = Mod, sender_ref = SenderRef}=S) ->
 	Mod:close(SenderRef),
 	{stop, normal, ok, S};
@@ -285,10 +311,6 @@ handle_call(_Request, _From, S) ->
 	NewState :: term(),
 	Timeout :: non_neg_integer() | infinity.
 %% ====================================================================
-handle_cast({send, Msg}, #state{compression=Comp, sender_ref=SenderRef, sender_mod=Mod, format=Fmt, host=Host}=S) ->
-	do_send(Msg, Comp, SenderRef, Mod, Fmt, Host),
-	{noreply, S};
-	
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
@@ -359,30 +381,71 @@ valid_format(default) ->	?DEFAULT_FORMAT;
 valid_format(X) ->			throw({invalid, {format, X}}).
 
 
-%% do_send/5
+%% valid_mode/1
 %% ====================================================================
-%% @doc Worker function for send/1 and send/2
--spec do_send(Msg, Comp, SenderRef, SenderMod, Format, Host) -> term() when
-	Msg :: binary()
-		 | term(),
-	Comp :: compression(),
-	SenderRef :: term(),
-	SenderMod :: module(),
-	Format :: format(),
-	Host :: binary().
+%% @doc Return valid mode setting. Throws if not valid.
+-spec valid_send_mode(send_mode()) -> send_mode().
 %% ====================================================================
-do_send(Msg, Comp, SenderRef, SenderMod, gelf, Host) when is_binary(Msg) ->
-	do_send([{full_message, Msg}], Comp, SenderRef, SenderMod, gelf, Host);
-do_send(Msg, Comp, SenderRef, SenderMod, gelf, Host) ->
-	Msg1 = case ?GV(host, Msg) of
-			   undefined -> [{host, Host}|Msg];
-			   _ -> Msg
-		   end,
-	Encoded = erl_graylog_gelf:to_sendable(erl_graylog_gelf:from_list(Msg1), Comp),
-	SenderMod:send(SenderRef, Encoded);
-do_send(Msg, _Comp, SenderRef, SenderMod, raw, _Host) when is_binary(Msg) ->
-	SenderMod:send(SenderRef, Msg);
-do_send(Msg, Comp, SenderRef, SenderMod, raw, Host) ->
-	Body = re:replace(io_lib:format("~p", [Msg]), "\n", "\\\\n", [{return, binary}, multiline, global, unicode]),
-	do_send(Body, Comp, SenderRef, SenderMod, raw, Host).
-	
+valid_send_mode(fire_and_forget) ->   fire_and_forget;
+valid_send_mode(validate_message) ->  validate_message;
+valid_send_mode(ensure_delivery) ->   ensure_delivery;
+valid_send_mode(default) ->           ?DEFAULT_MODE;
+valid_send_mode(X) ->                 throw({invalid, {send_mode, X}}).
+
+
+%% do_send/2
+%% ====================================================================
+%% @doc State deconstruction helper for do_send/5
+-spec do_send(Msg, #state{}) -> term() when
+  Msg :: binary()
+       | term().
+%% ====================================================================
+do_send(Msg, #state{compression=Comp, sender_ref=SenderRef, sender_mod=SenderMod, format=Fmt, host=Host, send_mode=SendMode}) ->
+  case sendable(Msg, Comp, Fmt, Host) of
+    {ok, Sendable} ->
+      send_sendable(SenderMod, SenderRef, Sendable, SendMode);
+    Other ->
+      Other
+  end.
+
+send_sendable(SenderMod, SenderRef, Sendable, fire_and_forget) ->
+  SenderMod:send(SenderRef, Sendable), %% handle_call/3 ensures async gen_server:reply
+  ok;
+send_sendable(SenderMod, SenderRef, Sendable, validate_message) ->
+  proc_lib:spawn(fun() -> SenderMod:send(SenderRef, Sendable) end),
+  ok;
+send_sendable(SenderMod, SenderRef, Sendable, ensure_delivery) ->
+  SenderMod:send(SenderRef, Sendable).
+
+
+%% sendable/4
+%% ====================================================================
+%% @doc Convert Msg to sendable binary
+%%
+%% Message will get converted and compressed according to Fmt and Comp.
+%% Host will get attached to Msg if Fmt is gelf and host not set in Msg.
+-spec sendable(Msg, compression(), format(), Host) -> Result when
+  Msg :: binary() | term(),
+  Host :: binary(),
+  Result :: {ok, Converted :: binary()}
+          | {error, reason()}.
+%% ====================================================================
+sendable(Msg, Comp, gelf, Host) when is_binary(Msg) ->
+  sendable([{full_message, Msg}], Comp, gelf, Host);
+sendable(Msg, Comp, gelf, Host) ->
+  Msg1 = case ?GV(host, Msg) of
+           undefined -> [{host, Host}|Msg];
+           _ -> Msg
+         end,
+  try erl_graylog_gelf:to_sendable(erl_graylog_gelf:from_list(Msg1), Comp) of
+    Sendable -> {ok, Sendable}
+  catch
+    throw:Exception -> {error, Exception}
+  end;
+sendable(Msg, _Comp, raw, _Host) when is_binary(Msg) ->
+  {ok, Msg};
+sendable(Msg, _Comp, raw, _Host) ->
+  Body = re:replace(io_lib:format("~p", [Msg]), "\n", "\\\\n", [{return, binary}, multiline, global, unicode]),
+  {ok, Body};
+sendable(Msg, Comp, Fmt, _Host) ->
+  {error, {invalid, [{msg, Msg}, {compression, Comp}, {format, Fmt}]}}.

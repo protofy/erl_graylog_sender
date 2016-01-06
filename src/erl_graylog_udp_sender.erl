@@ -79,16 +79,18 @@
 
 -define(DEFAULT_IP_VERSION, inet).
 
+-type addr() :: inet:ip_address()
+              | inet:hostname().
 -type opt() :: {ip_version, ipv4 | ipv6 | default}
-             | {addr, inet:ip_address() | inet:hostname()}
+             | {addr, addr()}
              | {port, inet:port_number()}
              | gen_udp:option().
-
+-type socket_info() :: {inet:socket(), addr(), inet:port_number()}.
 
 %% open/1
 %% ====================================================================
 %% @doc Open socket for sending
--spec open([opt()]) -> {ok, socket_info()} | {error, inet:posix}.
+-spec open([opt()]) -> {ok, socket_info()} | {error, inet:posix()}.
 %% ====================================================================
 open(Opts) ->
   Port = ?GV(port, Opts),
@@ -146,10 +148,11 @@ send({Socket, Addr, Port}, Packet) ->
 %% send_chunks/8
 %% ====================================================================
 %% @doc Send chunks of a packet
-- spec send_chunks(Socket, Addr, Port, MessageId, Num, Seq, RestSize) -> Result when
+- spec send_chunks(Socket, Addr, Port, Packet, MessageId, Num, Seq, RestSize) -> Result when
   Socket :: gen_udp:socket(),
   Addr :: inet:ip_address(),
   Port :: inet:port_number(),
+  Packet :: binary(),
   MessageId :: binary(),
   Num :: binary(),
   Seq :: non_neg_integer(),
