@@ -50,7 +50,7 @@
 %% NOTE: You should not use compression if you send the messages to  GELF TCP input. You might have zero-bytes in your compressed message and GELF TCP input uses \0 as message separator.
 %%
 
--module(erl_graylog_gelf).
+-module(graylog_gelf).
 
 -include_lib("protofy_common/include/protofy_common.hrl").
 

@@ -31,9 +31,8 @@
 %% ====================================================================
 %%
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
-
-
--module(erl_graylog_udp_sender_tests).
+%% @doc Tests for module graylog_udp_sender.
+-module(graylog_udp_sender_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("protofy_common/include/protofy_common.hrl").
@@ -46,7 +45,7 @@
 
 
 open_variants_test_() ->
-	F = fun erl_graylog_udp_sender:open/1,
+	F = fun graylog_udp_sender:open/1,
 	Addr = {127,0,0,1},
 	Port = 12345,
 	O = [{addr, Addr}, {port, Port}],
@@ -75,15 +74,15 @@ open_send_close_test() ->
 	TestPacket = ?CHUNK(100),
 	SendCb = fun(_Addr, _Port, Packet) -> Self ! {mock_udp, Packet} end,
 	mock_gen_udp(SendCb),
-	{ok, Ref} = erl_graylog_udp_sender:open(O),
-	erl_graylog_udp_sender:send(Ref, TestPacket),
+	{ok, Ref} = graylog_udp_sender:open(O),
+	graylog_udp_sender:send(Ref, TestPacket),
 	R = rcv(100),
-	erl_graylog_udp_sender:close(Ref),
+	graylog_udp_sender:close(Ref),
 	unmock(gen_udp),
 	?assertEqual({mock_udp, TestPacket}, R).
 
 make_chunk_4_test_() ->
-	F = fun erl_graylog_udp_sender:make_chunk/4,
+	F = fun graylog_udp_sender:make_chunk/4,
 	C = fun(Data, MsgId, Seq, Num) -> BinSeq = binary:encode_unsigned(Seq),
 									  <<16#1e, 16#0f, MsgId:8/binary, BinSeq:1/binary, Num:1/binary, Data/binary>> end,
 	Ok = fun(Data, MsgId, Seq, Num) -> ?_assertEqual(C(Data, MsgId, Seq, Num), F(Data, MsgId, Seq, Num)) end,
@@ -156,7 +155,7 @@ send_too_big_test_() ->
 send_recv_chunked(TestPacket, N) ->
 	Ref = send_chunked(TestPacket),
 	R = rcv(100, N, []),
-	erl_graylog_udp_sender:close(Ref),
+	graylog_udp_sender:close(Ref),
 	unmock(gen_udp),
 	R.
 
@@ -165,8 +164,8 @@ send_chunked(TestPacket) ->
 	Self = self(),
 	SendCb = fun(_Addr, _Port, Packet) -> Self ! {mock_udp, Packet} end,
 	mock_gen_udp(SendCb),
-	{ok, Ref} = erl_graylog_udp_sender:open(O),
-	erl_graylog_udp_sender:send(Ref, TestPacket),
+	{ok, Ref} = graylog_udp_sender:open(O),
+	graylog_udp_sender:send(Ref, TestPacket),
 	Ref.
 	
 

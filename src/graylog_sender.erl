@@ -80,13 +80,13 @@
 %% ```
 %% > Connection = [{type, udp}, {addr, {127,0,0,1}}, {port, 12202}].
 %% > Opts = [{connection, Connection}, {compression, gzip}, {format, gelf}].
-%% > {ok, Pid} = erl_graylog_sender:start_link(Opts).
+%% > {ok, Pid} = graylog_sender:start_link(Opts).
 %% > Msg = [{full_message, <<"Test Message">>}, {level, 1}].
-%% > erl_graylog_sender:send(Msg).
+%% > graylog_sender:send(Msg).
 %% '''
 
 
--module(erl_graylog_sender).
+-module(graylog_sender).
 -behaviour(gen_server).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -241,8 +241,8 @@ send(Ref, Msg) ->
 init([Opts]) ->
 	ConnectionOpts = ?GV(connection, Opts),
 	SenderMod = case ?GV(type, ConnectionOpts) of
-					tcp -> erl_graylog_tcp_sender;
-					udp -> erl_graylog_udp_sender
+					tcp -> graylog_tcp_sender;
+					udp -> graylog_udp_sender
 				end,
 	{ok, SenderRef} = SenderMod:open(ConnectionOpts),
   {ok, #state{
@@ -437,7 +437,7 @@ sendable(Msg, Comp, gelf, Host) ->
            undefined -> [{host, Host}|Msg];
            _ -> Msg
          end,
-  try erl_graylog_gelf:to_sendable(erl_graylog_gelf:from_list(Msg1), Comp) of
+  try graylog_gelf:to_sendable(graylog_gelf:from_list(Msg1), Comp) of
     Sendable -> {ok, Sendable}
   catch
     throw:Exception -> {error, Exception}

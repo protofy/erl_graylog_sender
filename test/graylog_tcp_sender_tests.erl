@@ -31,8 +31,8 @@
 %% ====================================================================
 %%
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
-
--module(erl_graylog_tcp_sender_tests).
+%% @doc Tests for module graylog_tcp_sender.
+-module(graylog_tcp_sender_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("protofy_common/include/protofy_common.hrl").
@@ -46,7 +46,7 @@
 %% Test open/1
 %% ====================================================================
 open_variants_test_() ->
-	F = fun erl_graylog_tcp_sender:open/1,
+	F = fun graylog_tcp_sender:open/1,
 	O = [{addr, {127,0,0,1}}, {port, 12345}],
 	T = fun(E, Opts) -> {ok, {mock_socket, _Addr, _Port, AOpts}} = F(Opts),
 						?_assert(proplists:is_defined(E, AOpts)) end,
@@ -76,10 +76,10 @@ open_send_close_test() ->
 	TestPacket = crypto:rand_bytes(20),
 	SendCb = fun(Packet) -> Self ! {mock_tcp, Packet} end,
 	mock_gen_tcp(SendCb),
-	{ok, Ref} = erl_graylog_tcp_sender:open(O),
-	erl_graylog_tcp_sender:send(Ref, TestPacket),
+	{ok, Ref} = graylog_tcp_sender:open(O),
+	graylog_tcp_sender:send(Ref, TestPacket),
 	R = rcv(100),
-	erl_graylog_tcp_sender:close(Ref),
+	graylog_tcp_sender:close(Ref),
 	unmock(gen_tcp),
 	?assertEqual({mock_tcp, <<TestPacket/binary, 0>>}, R).
 

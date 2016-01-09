@@ -1,10 +1,10 @@
-# erl_graylog_sender
+# graylog_sender
 
 This library application can be used to send messages to [graylog](https://www.graylog.org/).
 Messages can be sent to TCP and UDP inputs either in [GELF (1.1)](https://www.graylog.org/resources/gelf/) or raw format.
 
 ## Usage
-Although you can use all modules separately you probably want to use the erl_graylog_sender module.
+Although you can use all modules separately you probably want to use the graylog_sender module.
 
 ### Example 1: unnamed, UDP, GELF, gzip
 If you like to take it for a spin: After cloning, get the updates and compile:
@@ -25,13 +25,13 @@ erl> Connection = [{type, udp},
 erl> Opts = [{connection, Connection},
              {compression, gzip},
              {format, gelf}].
-erl> {ok, Pid} = erl_graylog_sender:start_link(Opts).
+erl> {ok, Pid} = graylog_sender:start_link(Opts).
 ```
 
 Send a message (send/2):
 ```
 erl> Msg = [{full_message, <<"Test Message">>}, {level, 1}].
-erl> erl_graylog_sender:send(Pid, Msg).
+erl> graylog_sender:send(Pid, Msg).
 ```
 
 The message should now appear in graylog.
@@ -52,10 +52,10 @@ You can also start the server in singleton mode. This is useful if you want only
           {format, raw},
           {server_ref, singleton},
           {host, <<"Testhost">>}].
-> {ok, Pid} = erl_graylog_sender:start_link(Opts).
+> {ok, Pid} = graylog_sender:start_link(Opts).
 
 > Msg = <<"Test Message">>.
-> erl_graylog_sender:send(Msg).
+> graylog_sender:send(Msg).
 ```
 
 ### Notes:
@@ -65,7 +65,7 @@ In singleton mode you should use send/1, stop/0, get_opt/1 and set_opt/2 to acce
 
 You can have a maximum of one singleton sender and several named and/or unnamed senders. 
 
-For further information about the available options see the erl_graylog_sender module.
+For further information about the available options see the graylog_sender module.
 
 ## Dependencies
 - protofy_common: Protofy common modules and macros

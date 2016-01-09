@@ -32,11 +32,8 @@
 %% ====================================================================
 %%
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
-%% @doc @todo Add description to erl_graylog_gelf_tests.
-
-
-
--module(erl_graylog_gelf_tests).
+%% @doc Tests for module graylog_gelf.
+-module(graylog_gelf_tests).
 
 -export([]).
 
@@ -52,44 +49,44 @@
 %% Test new/0
 %% ====================================================================
 new_0_test_() ->
-	Msg = erl_graylog_gelf:new(),
+	Msg = graylog_gelf:new(),
 	[
-	 {"version", ?_assertEqual(?CURRENT_GELF_VER, erl_graylog_gelf:get_version(Msg))},
-	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), erl_graylog_gelf:get_timestamp(Msg))}
+	 {"version", ?_assertEqual(?CURRENT_GELF_VER, graylog_gelf:get_version(Msg))},
+	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), graylog_gelf:get_timestamp(Msg))}
 	].
 
 %% Test new/1
 %% ====================================================================
 new_1_decimal_test_() ->
-	Msg = erl_graylog_gelf:new(1.1),
+	Msg = graylog_gelf:new(1.1),
 	[
-	 {"version", ?_assertEqual(?CURRENT_GELF_VER, erl_graylog_gelf:get_version(Msg))},
-	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), erl_graylog_gelf:get_timestamp(Msg))}
+	 {"version", ?_assertEqual(?CURRENT_GELF_VER, graylog_gelf:get_version(Msg))},
+	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), graylog_gelf:get_timestamp(Msg))}
 	].
 
 new_1_atom_test_() ->
-	Msg = erl_graylog_gelf:new('1.1'),
+	Msg = graylog_gelf:new('1.1'),
 	[
-	 {"version", ?_assertEqual(?CURRENT_GELF_VER, erl_graylog_gelf:get_version(Msg))},
-	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), erl_graylog_gelf:get_timestamp(Msg))}
+	 {"version", ?_assertEqual(?CURRENT_GELF_VER, graylog_gelf:get_version(Msg))},
+	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), graylog_gelf:get_timestamp(Msg))}
 	].
 
 new_1_binary_test_() ->
-	Msg = erl_graylog_gelf:new(<<"1.1">>),
+	Msg = graylog_gelf:new(<<"1.1">>),
 	[
-	 {"version", ?_assertEqual(?CURRENT_GELF_VER, erl_graylog_gelf:get_version(Msg))},
-	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), erl_graylog_gelf:get_timestamp(Msg))}
+	 {"version", ?_assertEqual(?CURRENT_GELF_VER, graylog_gelf:get_version(Msg))},
+	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), graylog_gelf:get_timestamp(Msg))}
 	].
 
 new_1_list_test_() ->
-	Msg = erl_graylog_gelf:new("1.1"),
+	Msg = graylog_gelf:new("1.1"),
 	[
-	 {"version", ?_assertEqual(?CURRENT_GELF_VER, erl_graylog_gelf:get_version(Msg))},
-	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), erl_graylog_gelf:get_timestamp(Msg))}
+	 {"version", ?_assertEqual(?CURRENT_GELF_VER, graylog_gelf:get_version(Msg))},
+	 {"has timestamp", ?_assertMatch(Ts when is_number(Ts), graylog_gelf:get_timestamp(Msg))}
 	].
 
 new_1_invalid_test_() ->
-	A = fun(V) -> ?_assertException(throw, {invalid, {version, _}}, erl_graylog_gelf:new(V)) end, 
+	A = fun(V) -> ?_assertException(throw, {invalid, {version, _}}, graylog_gelf:new(V)) end,
 	[
 	 {"<<\"0.1\">>", A(<<"0.1">>)},
 	 {"list", A("0.1")},
@@ -100,7 +97,7 @@ new_1_invalid_test_() ->
 %% Test from_list/2
 %% ====================================================================
 from_list_2_test_() ->
-	F = fun erl_graylog_gelf:from_list/2,
+	F = fun graylog_gelf:from_list/2,
 	Ts = 1393240854.00053,
 	D = [
 		   {timestamp, Ts},
@@ -126,7 +123,7 @@ from_list_2_test_() ->
 %% Test from_list/2 auto-generate short_message
 %% ====================================================================
 from_list_2_auto_generate_short_message_test_() ->
-	F = fun erl_graylog_gelf:from_list/2,
+	F = fun graylog_gelf:from_list/2,
 	Ts = 1393240854.00053,
 	D = [
 		   {timestamp, Ts},
@@ -150,90 +147,90 @@ from_list_2_auto_generate_short_message_test_() ->
 %% Test set_host/2 and get_host/1
 %% ====================================================================
 set_host_2_get_host_1_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	Msg2 = erl_graylog_gelf:set_host(<<"example.com">>, Msg),
+	Msg = graylog_gelf:new(),
+	Msg2 = graylog_gelf:set_host(<<"example.com">>, Msg),
 	[
-	 {"undefined at first", ?_assertEqual(undefined, erl_graylog_gelf:get_host(Msg))},
-	 {"example.com", ?_assertEqual(<<"example.com">>, erl_graylog_gelf:get_host(Msg2))}
+	 {"undefined at first", ?_assertEqual(undefined, graylog_gelf:get_host(Msg))},
+	 {"example.com", ?_assertEqual(<<"example.com">>, graylog_gelf:get_host(Msg2))}
 	].
 
 %% Test set_short_message/2, get_short_message/2
 %% ====================================================================
 set_short_message_2_get_short_message_1_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	Msg2 = erl_graylog_gelf:set_short_message(<<"A shrt msg">>, Msg),
+	Msg = graylog_gelf:new(),
+	Msg2 = graylog_gelf:set_short_message(<<"A shrt msg">>, Msg),
 	[
-	 {"undefined at first", ?_assertEqual(undefined, erl_graylog_gelf:get_short_message(Msg))},
-	 {"A shrt msg", ?_assertEqual(<<"A shrt msg">>, erl_graylog_gelf:get_short_message(Msg2))}
+	 {"undefined at first", ?_assertEqual(undefined, graylog_gelf:get_short_message(Msg))},
+	 {"A shrt msg", ?_assertEqual(<<"A shrt msg">>, graylog_gelf:get_short_message(Msg2))}
 	].
 
 %% Test set_full_message/2, get_full_message/2
 %% ====================================================================
 set_full_message_2_get_full_message_1_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	Msg2 = erl_graylog_gelf:set_full_message(<<"A full message">>, Msg),
+	Msg = graylog_gelf:new(),
+	Msg2 = graylog_gelf:set_full_message(<<"A full message">>, Msg),
 	[
-	 {"undefined at first", ?_assertEqual(undefined, erl_graylog_gelf:get_full_message(Msg))},
-	 {"A full message", ?_assertEqual(<<"A full message">>, erl_graylog_gelf:get_full_message(Msg2))}
+	 {"undefined at first", ?_assertEqual(undefined, graylog_gelf:get_full_message(Msg))},
+	 {"A full message", ?_assertEqual(<<"A full message">>, graylog_gelf:get_full_message(Msg2))}
 	].
 
 %% Test set_level/2, get_level/2
 %% ====================================================================
 set_level_2_get_level_1_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	Msg2 = erl_graylog_gelf:set_level(4, Msg),
+	Msg = graylog_gelf:new(),
+	Msg2 = graylog_gelf:set_level(4, Msg),
 	[
-	 {"undefined at first", ?_assertEqual(undefined, erl_graylog_gelf:get_level(Msg))},
-	 {"A shrt msg", ?_assertEqual(4, erl_graylog_gelf:get_level(Msg2))}
+	 {"undefined at first", ?_assertEqual(undefined, graylog_gelf:get_level(Msg))},
+	 {"A shrt msg", ?_assertEqual(4, graylog_gelf:get_level(Msg2))}
 	].
 
 set_level_2_invalid_test_() ->
-	Msg = erl_graylog_gelf:new(),
+	Msg = graylog_gelf:new(),
 	[
-	 {"Binary", ?_assertError(function_clause, erl_graylog_gelf:set_level(<<"1">>, Msg))},
-	 {"Double", ?_assertError(function_clause, erl_graylog_gelf:set_level(1.0, Msg))},
-	 {"List", ?_assertError(function_clause, erl_graylog_gelf:set_level("4", Msg))}
+	 {"Binary", ?_assertError(function_clause, graylog_gelf:set_level(<<"1">>, Msg))},
+	 {"Double", ?_assertError(function_clause, graylog_gelf:set_level(1.0, Msg))},
+	 {"List", ?_assertError(function_clause, graylog_gelf:set_level("4", Msg))}
 	].
 
 %% Test set_additional/3, get_additional/2
 %% ====================================================================
 set_additional_3_invalid_test_() ->
-	Msg = erl_graylog_gelf:new(),
+	Msg = graylog_gelf:new(),
 	[
-	 {"'_id'", ?_assertException(throw, "_id must not be used by client", erl_graylog_gelf:set_additional('_id', <<"test">>, Msg))},
-	 {"\"_id\"", ?_assertException(throw, "_id must not be used by client", erl_graylog_gelf:set_additional("_id", <<"test">>, Msg))},
-	 {"<<\"_id\">>", ?_assertException(throw, "_id must not be used by client", erl_graylog_gelf:set_additional(<<"_id">>, <<"test">>, Msg))},
-	 {"not underscore prefixed binary", ?_assertException(throw, {invalid, {key, _}, prefix}, erl_graylog_gelf:set_additional(<<"additional">>, <<"test">>, Msg))},
-	 {"not underscore prefixed list", ?_assertException(throw, {invalid, {key, _}, prefix}, erl_graylog_gelf:set_additional("additional", <<"test">>, Msg))},
-	 {"invalid value type atom", ?_assertError(function_clause, erl_graylog_gelf:set_additional("_t", test, Msg))},
-	 {"invalid value type tuple", ?_assertError(function_clause, erl_graylog_gelf:set_additional("_t", {<<"1">>, <<"2">>}, Msg))}
+	 {"'_id'", ?_assertException(throw, "_id must not be used by client", graylog_gelf:set_additional('_id', <<"test">>, Msg))},
+	 {"\"_id\"", ?_assertException(throw, "_id must not be used by client", graylog_gelf:set_additional("_id", <<"test">>, Msg))},
+	 {"<<\"_id\">>", ?_assertException(throw, "_id must not be used by client", graylog_gelf:set_additional(<<"_id">>, <<"test">>, Msg))},
+	 {"not underscore prefixed binary", ?_assertException(throw, {invalid, {key, _}, prefix}, graylog_gelf:set_additional(<<"additional">>, <<"test">>, Msg))},
+	 {"not underscore prefixed list", ?_assertException(throw, {invalid, {key, _}, prefix}, graylog_gelf:set_additional("additional", <<"test">>, Msg))},
+	 {"invalid value type atom", ?_assertError(function_clause, graylog_gelf:set_additional("_t", test, Msg))},
+	 {"invalid value type tuple", ?_assertError(function_clause, graylog_gelf:set_additional("_t", {<<"1">>, <<"2">>}, Msg))}
 	].
 
 set_additional_3_get_additional_2_test_() ->
-	Msg = erl_graylog_gelf:new(),
+	Msg = graylog_gelf:new(),
 	[
 	 {"number 10", ?_assertEqual(10,
-								 erl_graylog_gelf:get_additional(
-								   '_t', erl_graylog_gelf:set_additional('_t', 10, Msg)))},
+								 graylog_gelf:get_additional(
+								   '_t', graylog_gelf:set_additional('_t', 10, Msg)))},
 	 {"number 4.2", ?_assertEqual(4.2,
-								  erl_graylog_gelf:get_additional(
-									"_x", erl_graylog_gelf:set_additional("_x", 4.2, Msg)))},
+								  graylog_gelf:get_additional(
+									"_x", graylog_gelf:set_additional("_x", 4.2, Msg)))},
 	 {"list", ?_assertEqual("test",
-							erl_graylog_gelf:get_additional(
-							  <<"_y">>, erl_graylog_gelf:set_additional(<<"_y">>, "test", Msg)))},
+							graylog_gelf:get_additional(
+							  <<"_y">>, graylog_gelf:set_additional(<<"_y">>, "test", Msg)))},
 	 {"binary", ?_assertEqual(<<"test">>,
-							  erl_graylog_gelf:get_additional(
-								<<"_z">>, erl_graylog_gelf:set_additional(<<"_z">>, <<"test">>, Msg)))}
+							  graylog_gelf:get_additional(
+								<<"_z">>, graylog_gelf:set_additional(<<"_z">>, <<"test">>, Msg)))}
 	].
 
 
 %% Test to_sendable/2
 %% ====================================================================
 to_sendable_1_test_() ->
-	Msg0 = erl_graylog_gelf:new(),
+	Msg0 = graylog_gelf:new(),
 	MsgFull = [{host, <<"example.com">>}, {short_message, <<"A shrt π msg"/utf8>>},
 			   {full_message, <<"A full message">>}, {level, 2}, {'_a', <<"test">>} | Msg0],
-	F = fun erl_graylog_gelf:to_sendable/2,
+	F = fun graylog_gelf:to_sendable/2,
 	[
 	 {"ok gzip", ?_assertMatch(B when is_binary(B), F(MsgFull, gzip))},
 	 {"ok zlib", ?_assertMatch(B when is_binary(B), F(MsgFull, zlib))},
@@ -249,7 +246,7 @@ to_sendable_1_test_() ->
 %% Test valid_version/1
 %% ====================================================================
 valid_version_1_test_() ->
-	F = fun erl_graylog_gelf:valid_version/1,
+	F = fun graylog_gelf:valid_version/1,
 	A = fun(V) -> ?_assertEqual(<<"1.1">>, F(V)) end,
 	AE = fun(V) -> ?_assertException(throw, {invalid, {version, _}}, F(V)) end,
 	[
@@ -265,7 +262,7 @@ valid_version_1_test_() ->
 %% Test valid_key/1
 %% ====================================================================
 valid_key_1_test_() ->
-	F = fun erl_graylog_gelf:valid_key/1,
+	F = fun graylog_gelf:valid_key/1,
 	[
 	 {"'some'", ?_assertEqual(some, F(some))},
 	 {"\"some\"", ?_assertEqual(<<"some">>, F("some"))},
@@ -278,7 +275,7 @@ valid_key_1_test_() ->
 %% Test valid_timestamp/1
 %% ====================================================================
 valid_timestamp_1_test_() ->
-	F = fun erl_graylog_gelf:valid_timestamp/1,
+	F = fun graylog_gelf:valid_timestamp/1,
 	T = protofy_time:now_timestamp_micros() / 1000000,
 	T0 = trunc(T), 
 	AE = fun(X) -> ?_assertException(throw, {invalid, {timestamp, _}}, F(X)) end,
@@ -294,7 +291,7 @@ valid_timestamp_1_test_() ->
 %% Test valid_level/1
 %% ====================================================================
 valid_level_1_test_() ->
-	F = fun erl_graylog_gelf:valid_level/1,
+	F = fun graylog_gelf:valid_level/1,
 	Ok = fun(X) -> ?_assertEqual(X, F(X)) end,
 	Invalid = fun(X) -> ?_assertException(throw, {invalid, {level, _}}, F(X)) end,
 	[
@@ -311,7 +308,7 @@ valid_level_1_test_() ->
 %% Test valid_string/1
 %% ====================================================================
 valid_string_test_() ->
-	F = fun erl_graylog_gelf:valid_string/1,
+	F = fun graylog_gelf:valid_string/1,
 	[
 	 {"ok \"abc\"", ?_assertEqual(<<"abc">>, F("abc"))},
 	 {"ok <<\"abc\">>", ?_assertEqual(<<"abc">>, F(<<"abc">>))},
@@ -324,13 +321,13 @@ valid_string_test_() ->
 %% Test now_gelf_micros/0
 %% ====================================================================
 now_gelf_micros_0_test_() ->
-	?_assertMatch(X when is_number(X), erl_graylog_gelf:now_gelf_micros()).
+	?_assertMatch(X when is_number(X), graylog_gelf:now_gelf_micros()).
 
 
 %% Test throw_if_not_additional_key/1
 %% ====================================================================
 throw_if_not_additional_key_1_test_() ->
-	F = fun erl_graylog_gelf:throw_if_not_additional_key/1,
+	F = fun graylog_gelf:throw_if_not_additional_key/1,
 	Reserved = fun(X) ->
 					   ?_assertException(throw, {invalid, {key, _}, reserved}, F(X))
 			   end,
@@ -372,10 +369,10 @@ throw_if_not_additional_key_1_test_() ->
 %% Test throw_if_not_present/2
 %% ====================================================================
 throw_if_not_present_2_test_() ->
-	F = fun erl_graylog_gelf:throw_if_not_present/2,
-	Msg0 = erl_graylog_gelf:new(),
-	Msg1 = erl_graylog_gelf:set_additional('_test', <<"test">>, Msg0),
-	Msg2 = erl_graylog_gelf:set_host(<<"example.com">>, Msg1),
+	F = fun graylog_gelf:throw_if_not_present/2,
+	Msg0 = graylog_gelf:new(),
+	Msg1 = graylog_gelf:set_additional('_test', <<"test">>, Msg0),
+	Msg2 = graylog_gelf:set_host(<<"example.com">>, Msg1),
 	[
 	 {"host present", ?_assertEqual(ok, F(host, Msg2))},
 	 {"_test present", ?_assertEqual(ok, F('_test', Msg2))},
@@ -386,8 +383,8 @@ throw_if_not_present_2_test_() ->
 %% Test set_number_field/3
 %% ====================================================================
 set_number_field_3_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	F = fun erl_graylog_gelf:set_number_field/3,
+	Msg = graylog_gelf:new(),
+	F = fun graylog_gelf:set_number_field/3,
 	[
 	 {"10 ok", ?_assertEqual(10, ?GV(test, F(test, 10, Msg)))},
 	 {"10.1 ok", ?_assertEqual(10.1, ?GV(test, F(test, 10.1, Msg)))},
@@ -400,8 +397,8 @@ set_number_field_3_test_() ->
 %% Test set_string_field/3
 %% ====================================================================
 set_string_field_3_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	F = fun erl_graylog_gelf:set_string_field/3,
+	Msg = graylog_gelf:new(),
+	F = fun graylog_gelf:set_string_field/3,
 	[
 	 {"ok binary", ?_assertEqual(<<"test">>, ?GV(test, F(test, <<"test">>, Msg)))},
 	 {"ok list", ?_assertEqual("test", ?GV(test, F(test, "test", Msg)))},
@@ -414,8 +411,8 @@ set_string_field_3_test_() ->
 %% Test set_field/3
 %% ====================================================================
 set_field_3_test_() ->
-	Msg = erl_graylog_gelf:new(),
-	F = fun erl_graylog_gelf:set_field/3,
+	Msg = graylog_gelf:new(),
+	F = fun graylog_gelf:set_field/3,
 	[
 	 {"ok binary key", ?_assertEqual(<<"value">>, ?GV(<<"test">>, F(<<"test">>, <<"value">>, Msg)))},
 	 {"ok list key", ?_assertEqual(<<"value">>, ?GV("test", F("test", <<"value">>, Msg)))},
@@ -427,8 +424,8 @@ set_field_3_test_() ->
 %% Test to_sendable_1_1/2
 %% ====================================================================
 to_sendable_1_1_2_test_() ->
-	F = fun erl_graylog_gelf:to_sendable_1_1/2,
-	Msg0 = erl_graylog_gelf:new(),
+	F = fun graylog_gelf:to_sendable_1_1/2,
+	Msg0 = graylog_gelf:new(),
 	MsgFull = [{host, <<"example.com">>}, {short_message, <<"A shrt msg">>},
 			   {full_message, <<"A full message">>}, {level, 2}, {<<"_a">>, <<"test">>} | Msg0],
 	No = fun(Key) -> proplists:delete(Key, MsgFull) end,
@@ -446,11 +443,11 @@ to_sendable_1_1_2_test_() ->
 	].
 
 to_sendable_1_1_2_reversed_test_() ->
-	F = fun erl_graylog_gelf:to_sendable_1_1/2,
+	F = fun graylog_gelf:to_sendable_1_1/2,
 	ShrtMsg = <<"A π shrt msg"/utf8>>,
 	FllMsg = <<"A full ∑ message"/utf8>>,
 	Add = <<"test å test"/utf8>>,
-	Msg0 = erl_graylog_gelf:new(),
+	Msg0 = graylog_gelf:new(),
 	MsgFull = [{host, <<"example.com">>}, {short_message, ShrtMsg},
 			   {full_message, FllMsg}, {level, 2}, {<<"_a">>, Add} | Msg0],
 	{Rev} = jiffy:decode(zlib:gunzip(F(MsgFull, gzip))),
@@ -467,7 +464,7 @@ to_sendable_1_1_2_reversed_test_() ->
 %% Test compress/2
 %% ====================================================================
 compress_2_test_() ->
-	F = fun erl_graylog_gelf:compress/2,
+	F = fun graylog_gelf:compress/2,
 	[
 	 {"gzip", ?_assertEqual(zlib:gzip(<<"gzip test">>), F(<<"gzip test">>, gzip))},
 	 {"zlib", ?_assertEqual(zlib:compress(<<"zlib test">>), F(<<"zlib test">>, zlib))},
@@ -479,7 +476,7 @@ compress_2_test_() ->
 %% Test do_from_list/2
 %% ====================================================================
 do_from_list_2_test_() ->
-	F = fun erl_graylog_gelf:do_from_list/2,
+	F = fun graylog_gelf:do_from_list/2,
 	Ts = 1393240854.00053,
 	D = [
 		   {timestamp, Ts},
@@ -504,7 +501,7 @@ do_from_list_2_test_() ->
 %% Test from_list_field/3
 %% ====================================================================
 from_list_field_3_test_() ->
-	A = fun(K, V) -> R = erl_graylog_gelf:from_list_field(K, V, [{'_dummy', 123}]),
+	A = fun(K, V) -> R = graylog_gelf:from_list_field(K, V, [{'_dummy', 123}]),
 					 ?_assertEqual(V, ?GV(K, R)) end,
 	[
 	 {"timestamp ok", A(timestamp, 1393240854.00053)},
@@ -520,7 +517,7 @@ from_list_field_3_test_() ->
 %% Test add_additional/3
 %% ====================================================================
 add_additional_test_() ->
-	F = fun erl_graylog_gelf:add_additional/3,
+	F = fun graylog_gelf:add_additional/3,
 	Ok = fun(K, V, E) -> ?_assertEqual(E, ?GV(K, F(K, V, [{host, "test"}]))) end, 
 	[
 	 {"ok '_abc',\"bcd\"", Ok('_abc', "bcd", <<"bcd">>)},
@@ -539,10 +536,10 @@ add_additional_test_() ->
 %% Test to_list/1
 %% ====================================================================
 to_list_test_() ->
-	Msg = erl_graylog_gelf:from_list(
+	Msg = graylog_gelf:from_list(
 			[{host, <<"example.com">>}, {short_message, <<"A shrt msg">>},
 			 {full_message, <<"A full message">>}, {level, 2}, {<<"_a">>, <<"test">>}]),
-	List = erl_graylog_gelf:to_list(Msg),
+	List = graylog_gelf:to_list(Msg),
 	T = fun(K, V) -> ?_assertEqual(V, ?GV(K, List)) end,
 	[
 	 {"version", T(version, <<"1.1">>)},
@@ -555,7 +552,7 @@ to_list_test_() ->
 	 
 
 shorten_test_() ->
-	F = fun erl_graylog_gelf:shorten/2,
+	F = fun graylog_gelf:shorten/2,
 	U = fun(X) -> unicode:characters_to_binary(X, utf8, utf8) end,
 	[
 	 {"binary", ?_assertEqual(<<"abc">>, F(<<"abcdef">>, 3))},

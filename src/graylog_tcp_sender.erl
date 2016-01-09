@@ -33,7 +33,7 @@
 %% ====================================================================
 %%
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
-%% @doc This is the TCP worker module for erl_graylog_sender.
+%% @doc This is the TCP worker module for graylog_sender.
 %%
 %% == Options ==
 %% ```
@@ -52,13 +52,13 @@
 %%
 %% == Example ==
 %% ```
-%% > {ok, Socket} = erl_graylog_tcp_sender:open([{addr, {127,0,0,1}}, {port, 1234}]).
-%% > erl_graylog_tcp_sender:send(Socket, <<"Test Packet">>).
-%% > erl_graylog_tcp_sender:close(Socket).
+%% > {ok, Socket} = graylog_tcp_sender:open([{addr, {127,0,0,1}}, {port, 1234}]).
+%% > graylog_tcp_sender:send(Socket, <<"Test Packet">>).
+%% > graylog_tcp_sender:close(Socket).
 %% '''
 %%
 
--module(erl_graylog_tcp_sender).
+-module(graylog_tcp_sender).
 
 -include_lib("protofy_common/include/protofy_common.hrl").
 

@@ -31,10 +31,8 @@
 %% ====================================================================
 %%
 %% @author Bjoern Kortuemm (@uuid0) <bjoern@protofy.com>
-%% @doc @todo Add description to erl_graylod_sender_tests.
-
-
--module(erl_graylog_sender_tests).
+%% @doc Tests for module graylog_sender.
+-module(graylog_sender_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("protofy_common/include/protofy_common.hrl").
@@ -56,10 +54,10 @@
 start_stop_unnamed_test_() ->
 	{ok, Pid} = start_srv(undefined),
 	R0 = is_process_alive(Pid),
-	erl_graylog_sender:stop(Pid),
+	graylog_sender:stop(Pid),
 	R1 = protofy_test_util:wait_for_stop(Pid, 10),
 	R2 = rcv(100),
-	unmock(erl_graylog_tcp_sender),
+	unmock(graylog_tcp_sender),
 	[{"started", ?_assert(R0)},
 	 {"stopped", ?_assertEqual(ok, R1)},
 	 {"close received", ?_assertEqual(mocked_tcp_close, R2)}
@@ -70,10 +68,10 @@ start_stop_named_test_() ->
 	{ok, Pid1} = start_srv(test_ref),
 	Pid2 = whereis(test_ref),
 	R0 = is_process_alive(Pid1),
-	erl_graylog_sender:stop(test_ref),
+	graylog_sender:stop(test_ref),
 	R1 = protofy_test_util:wait_for_stop(Pid1, 10),
 	R2 = rcv(100),
-	unmock(erl_graylog_tcp_sender),
+	unmock(graylog_tcp_sender),
 	[{"started", ?_assert(R0)},
 	 {"stopped", ?_assertEqual(ok, R1)},
 	 {"close received", ?_assertEqual(mocked_tcp_close, R2)},
@@ -83,12 +81,12 @@ start_stop_named_test_() ->
 
 start_stop_singleton_test_() ->
 	{ok, Pid1} = start_srv(singleton),
-	Pid2 = whereis(erl_graylog_sender),
+	Pid2 = whereis(graylog_sender),
 	R0 = is_process_alive(Pid1),
-	erl_graylog_sender:stop(),
+	graylog_sender:stop(),
 	R1 = protofy_test_util:wait_for_stop(Pid1, 10),
 	R2 = rcv(100),
-	unmock(erl_graylog_tcp_sender),
+	unmock(graylog_tcp_sender),
 	[{"started", ?_assert(R0)},
 	 {"stopped", ?_assertEqual(ok, R1)},
 	 {"close received", ?_assertEqual(mocked_tcp_close, R2)},
@@ -99,8 +97,8 @@ start_stop_singleton_test_() ->
 %% ====================================================================
 set_opt_3_get_opt_2_test_() ->
 	{ok, Pid} = start_srv(undefined),
-	G = fun(K) -> erl_graylog_sender:get_opt(Pid, K) end,
-	S = fun(K, V) -> erl_graylog_sender:set_opt(Pid, K, V) end,
+	G = fun(K) -> graylog_sender:get_opt(Pid, K) end,
+	S = fun(K, V) -> graylog_sender:set_opt(Pid, K, V) end,
 	R1 = G(compression),
 	R2 = G(format),
 	R3 = S(compression, gzip),
@@ -110,7 +108,7 @@ set_opt_3_get_opt_2_test_() ->
   R7 = G(send_mode),
   R8 = S(send_mode, ensure_delivery),
   R9 = G(send_mode),
-	unmock(erl_graylog_tcp_sender),
+	unmock(graylog_tcp_sender),
 	[
 	 {"before compression none", ?_assertEqual(none, R1)},
 	 {"before format raw", ?_assertEqual(raw, R2)},
@@ -128,9 +126,9 @@ set_opt_3_get_opt_2_test_() ->
 %% ====================================================================
 send_2_test_() ->
 	{ok, Pid} = start_srv(undefined),
-	R1 = erl_graylog_sender:send(Pid, <<"send_2_test">>),
+	R1 = graylog_sender:send(Pid, <<"send_2_test">>),
 	R = rcv(100),
-	unmock(erl_graylog_tcp_sender),
+	unmock(graylog_tcp_sender),
 	[
 	 {"started", ?_assertEqual(ok, R1)},
 	 {"received", ?_assertMatch({mocked_tcp_sent, _}, R)}
@@ -165,16 +163,16 @@ send_2_gelf_ensure_delivery_test_() ->
 
 
 send_2_gelf_test_helper(Mode) ->
-  mock_erl_graylog_tcp_sender({ok, sent}),
+  mock_graylog_tcp_sender({ok, sent}),
   ConnOpts = [{type, tcp}],
   Opts = [{connection, ConnOpts}, {compression, none}, {format, gelf}, {host, <<"testhost">>}],
-  {ok, Pid} = erl_graylog_sender:start_link(Opts),
-  erl_graylog_sender:set_opt(Pid, send_mode, Mode),
-  R1 = erl_graylog_sender:send(Pid, [{full_message, <<"1">>}]),
+  {ok, Pid} = graylog_sender:start_link(Opts),
+  graylog_sender:set_opt(Pid, send_mode, Mode),
+  R1 = graylog_sender:send(Pid, [{full_message, <<"1">>}]),
   R2 = rcv(100),
-  R3 = erl_graylog_sender:send(Pid, [{invalid, <<"invalid">>}]),
+  R3 = graylog_sender:send(Pid, [{invalid, <<"invalid">>}]),
   R4 = rcv(100),
-  unmock(erl_graylog_tcp_sender),
+  unmock(graylog_tcp_sender),
   {R1, R2, R3, R4}.
 
 
@@ -182,10 +180,10 @@ send_2_gelf_test_helper(Mode) ->
 %% ====================================================================
 singleton_test_() ->
 	{ok, Pid1} = start_srv(singleton),
-	Pid2 = whereis(erl_graylog_sender),
-	R0 = erl_graylog_sender:send(<<"singleton_test">>),
-	G = fun(K) -> erl_graylog_sender:get_opt(K) end,
-	S = fun(K, V) -> erl_graylog_sender:set_opt(K, V) end,
+	Pid2 = whereis(graylog_sender),
+	R0 = graylog_sender:send(<<"singleton_test">>),
+	G = fun(K) -> graylog_sender:get_opt(K) end,
+	S = fun(K, V) -> graylog_sender:set_opt(K, V) end,
 	R1 = G(compression),
 	R2 = G(format),
 	R3 = S(compression, gzip),
@@ -193,7 +191,7 @@ singleton_test_() ->
 	R5 = G(compression),
 	R6 = G(format),
 	R7 = rcv(100),
-	unmock(erl_graylog_tcp_sender),
+	unmock(graylog_tcp_sender),
 	[
 	 {"started", ?_assertEqual(ok, R0)},
 	 {"process is singleton", ?_assertEqual(Pid1, Pid2)},
@@ -214,33 +212,33 @@ singleton_test_() ->
 %% Test init/1
 %% ====================================================================
 init_tcp_host_test() ->
-	mock_erl_graylog_tcp_sender(),
+	mock_graylog_tcp_sender(),
 	ConnOpts = [{type, tcp}],
 	Opts = [{connection, ConnOpts}, {compression, none}, {format, raw}, {host, <<"testhost">>}],
-	R = erl_graylog_sender:init([Opts]),
-	unmock(erl_graylog_tcp_sender),
+	R = graylog_sender:init([Opts]),
+	unmock(graylog_tcp_sender),
 	?assertMatch({ok, #state{}}, R),
 	{ok, S} = R,
 	?assertEqual(none, S#state.compression),
 	?assertMatch(I when is_integer(I), S#state.count),
 	?assertMatch({mocked_tcp, _}, S#state.sender_ref),
-	?assertEqual(erl_graylog_tcp_sender, S#state.sender_mod),
+	?assertEqual(graylog_tcp_sender, S#state.sender_mod),
 	?assertEqual(raw, S#state.format),
 	?assertEqual(<<"testhost">>, S#state.host).
 
 init_udp_auto_host_test() ->
-	mock_erl_graylog_udp_sender(),
+	mock_graylog_udp_sender(),
 	ConnOpts = [{type, udp}],
 	Opts = [{connection, ConnOpts}, {compression, none}, {format, raw}],
 	{ok, Host} = inet:gethostname(), 
-	R = erl_graylog_sender:init([Opts]),
-	unmock(erl_graylog_udp_sender),
+	R = graylog_sender:init([Opts]),
+	unmock(graylog_udp_sender),
 	?assertMatch({ok, #state{}}, R),
 	{ok, S} = R,
 	?assertEqual(none, S#state.compression),
 	?assertMatch(I when is_integer(I), S#state.count),
 	?assertMatch({mocked_udp, _}, S#state.sender_ref),
-	?assertEqual(erl_graylog_udp_sender, S#state.sender_mod),
+	?assertEqual(graylog_udp_sender, S#state.sender_mod),
 	?assertEqual(raw, S#state.format),
 	?assertEqual(list_to_binary(Host), S#state.host).
 
@@ -249,7 +247,7 @@ init_udp_auto_host_test() ->
 %% ====================================================================
 handle_call_test_() ->
 	S = #state{compression = none, format = raw},
-	F = fun(Msg) -> erl_graylog_sender:handle_call(Msg, undefined, S) end,
+	F = fun(Msg) -> graylog_sender:handle_call(Msg, undefined, S) end,
 	[
 	 {"get_opt compression", ?_assertEqual({reply, none, S}, F({get_opt, compression}))},
 	 {"get_opt format", ?_assertEqual({reply, raw, S}, F({get_opt, format}))},
@@ -262,7 +260,7 @@ handle_call_test_() ->
 handle_call_stop_test() ->
 	Ref = {echo, self()},
 	S = #state{compression = none, format = raw, sender_ref = Ref, sender_mod = ?MODULE},
-	?assertEqual({stop, normal, ok, S}, erl_graylog_sender:handle_call(stop, undefined, S)),
+	?assertEqual({stop, normal, ok, S}, graylog_sender:handle_call(stop, undefined, S)),
 	R = rcv(100),
 	?assertEqual({closed, Ref}, R).
 	
@@ -270,25 +268,25 @@ handle_call_stop_test() ->
 %% Test handle_cast/2
 %% ====================================================================
 handle_cast_test_() ->
-  ?_assertEqual({noreply, test}, erl_graylog_sender:handle_cast(cast, test)).
+  ?_assertEqual({noreply, test}, graylog_sender:handle_cast(cast, test)).
 
 
 %% Test handle_info/2
 %% ====================================================================
 handle_info_test_() ->
-	?_assertEqual({noreply, test}, erl_graylog_sender:handle_info(info, test)).
+	?_assertEqual({noreply, test}, graylog_sender:handle_info(info, test)).
 
 
 %% Test terminate/2
 %% ====================================================================
 terminate_test_() ->
-	?_assertEqual(ok, erl_graylog_sender:terminate(undefined, test)).
+	?_assertEqual(ok, graylog_sender:terminate(undefined, test)).
 
 
 %% Test code_change/3
 %% ====================================================================
 code_change_test_() ->
-	?_assertEqual({ok, test}, erl_graylog_sender:code_change(undefined, test, undefined)).
+	?_assertEqual({ok, test}, graylog_sender:code_change(undefined, test, undefined)).
 
 
 %% ====================================================================
@@ -306,7 +304,7 @@ do_send_2_test_() ->
     host = <<"testhost">>,
     send_mode = validate_message
   },
-  F = fun(Msg) -> erl_graylog_sender:do_send(Msg, S) end,
+  F = fun(Msg) -> graylog_sender:do_send(Msg, S) end,
   Msg = [{full_message, <<"Full Message">>}],
   [
     {"ok", ?_assertEqual(ok, F(Msg))},
@@ -316,8 +314,8 @@ do_send_2_test_() ->
 %% Tests for send_sendable/4
 %% ====================================================================
 send_sendable_test_() ->
-  {ok, Sendable} = erl_graylog_sender:sendable(<<"body">>, none, raw, undefined),
-  F = fun(Mode) -> erl_graylog_sender:send_sendable(?MODULE, return, Sendable, Mode) end,
+  {ok, Sendable} = graylog_sender:sendable(<<"body">>, none, raw, undefined),
+  F = fun(Mode) -> graylog_sender:send_sendable(?MODULE, return, Sendable, Mode) end,
   [
     {"fire_and_forget", ?_assertEqual(ok, F(fire_and_forget))},
     {"validate_message", ?_assertEqual(ok, F(validate_message))},
@@ -326,13 +324,13 @@ send_sendable_test_() ->
 
 %% Tests for sendable/4
 %% ====================================================================
-%% The actual conversion is tested in erl_graylog_gelf_tests
+%% The actual conversion is tested in graylog_gelf_tests
 sendable_test_() ->
   Host = <<"sendable_4_host">>,
   Body = <<"body">>,
   Msg = [{full_message, Body}, {<<"_extra1">>, <<"extra1">>}],
   MsgWithHost = [{host, <<"set host">>}|Msg],
-  F = fun(X, Fmt) -> erl_graylog_sender:sendable(X, none, Fmt, Host) end,
+  F = fun(X, Fmt) -> graylog_sender:sendable(X, none, Fmt, Host) end,
   T = fun(X, Fmt) -> ?_assertMatch({ok, B} when is_binary(B), F(X, Fmt)) end,
   THost = fun(X, Fmt, E) ->
     {ok, R} = F(X, Fmt),
@@ -353,7 +351,7 @@ sendable_test_() ->
 %% Test valid_compression/1
 %% ====================================================================
 valid_compression_test_() ->
-	F = fun erl_graylog_sender:valid_compression/1,
+	F = fun graylog_sender:valid_compression/1,
 	T = fun(E, X) -> ?_assertEqual(E, F(X)) end,
 	[
 	 {"default", T(gzip, default)},
@@ -367,7 +365,7 @@ valid_compression_test_() ->
 %% Test valid_format/1
 %% ====================================================================
 valid_format_test_() ->
-	F = fun erl_graylog_sender:valid_format/1,
+	F = fun graylog_sender:valid_format/1,
 	T = fun(E, X) -> ?_assertEqual(E, F(X)) end,
 	[
 	 {"default", T(gelf, default)},
@@ -379,7 +377,7 @@ valid_format_test_() ->
 %% Test valid_mode/1
 %% ====================================================================
 valid_mode_test_() ->
-  F = fun erl_graylog_sender:valid_send_mode/1,
+  F = fun graylog_sender:valid_send_mode/1,
   T = fun(E, X) -> ?_assertEqual(E, F(X)) end,
   [
     {"default", T(fire_and_forget, default)},
@@ -396,20 +394,20 @@ valid_mode_test_() ->
 
 %% Pseudo sender that can be used for testing 
 %% ====================================================================
-mock_erl_graylog_tcp_sender() ->
-  mock_erl_graylog_tcp_sender(ok).
+mock_graylog_tcp_sender() ->
+  mock_graylog_tcp_sender(ok).
 
-mock_erl_graylog_tcp_sender(SendReturnValue) ->
-	ok = meck:new(erl_graylog_tcp_sender, []),
-	ok = meck:expect(erl_graylog_tcp_sender, open, fun(Opts) -> {ok, {mocked_tcp, Opts}} end),
+mock_graylog_tcp_sender(SendReturnValue) ->
+	ok = meck:new(graylog_tcp_sender, []),
+	ok = meck:expect(graylog_tcp_sender, open, fun(Opts) -> {ok, {mocked_tcp, Opts}} end),
 	Self = self(),
-	ok = meck:expect(erl_graylog_tcp_sender, send, fun({mocked_tcp, _}, Msg) -> Self ! {mocked_tcp_sent, Msg}, SendReturnValue end),
-	ok = meck:expect(erl_graylog_tcp_sender, close, fun({mocked_tcp, _}) -> Self ! mocked_tcp_close, ok end),
+	ok = meck:expect(graylog_tcp_sender, send, fun({mocked_tcp, _}, Msg) -> Self ! {mocked_tcp_sent, Msg}, SendReturnValue end),
+	ok = meck:expect(graylog_tcp_sender, close, fun({mocked_tcp, _}) -> Self ! mocked_tcp_close, ok end),
 	ok.
 
-mock_erl_graylog_udp_sender() ->
-	ok = meck:new(erl_graylog_udp_sender, []),
-	ok = meck:expect(erl_graylog_udp_sender, open, fun(Opts) -> {ok, {mocked_udp, Opts}} end),
+mock_graylog_udp_sender() ->
+	ok = meck:new(graylog_udp_sender, []),
+	ok = meck:expect(graylog_udp_sender, open, fun(Opts) -> {ok, {mocked_udp, Opts}} end),
 	ok.
 
 unmock(Mod) ->
@@ -426,10 +424,10 @@ unmock(Mod) ->
 start_srv_already_mocked(Ref) ->
 	ConnOpts = [{type, tcp}],
 	Opts = [{connection, ConnOpts}, {compression, none}, {format, raw}, {host, <<"testhost">>}, {server_ref, Ref}],
-	erl_graylog_sender:start_link(Opts).
+	graylog_sender:start_link(Opts).
 
 start_srv(Ref) ->
-	mock_erl_graylog_tcp_sender(),
+	mock_graylog_tcp_sender(),
 	start_srv_already_mocked(Ref).
 
 send(return, Msg) ->
