@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/protofy/erl_graylog_sender.svg)](https://travis-ci.org/protofy/erl_graylog_sender)
+
 # graylog_sender
 
 This library application can be used to send messages to [graylog](https://www.graylog.org/).
