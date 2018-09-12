@@ -135,7 +135,7 @@ send({Socket, Addr, Port}, Packet) ->
               (Num0 * ?MAX_CHUNK_SIZE) < Size -> Num0 + 1;
               true -> Num0
             end,
-      MessageId = crypto:rand_bytes(?GELF_MSGID_SIZE),
+      MessageId = crypto:strong_rand_bytes(?GELF_MSGID_SIZE),
       send_chunks(Socket, Addr, Port, Packet, MessageId, binary:encode_unsigned(Num), 0, Size);
     true ->
       gen_udp:send(Socket, Addr, Port, Packet)
