@@ -73,7 +73,7 @@ open_variants_test_() ->
 open_send_close_test() ->
 	O = [{addr, {127,0,0,1}}, {port, 12345}],
 	Self = self(),
-	TestPacket = crypto:rand_bytes(20),
+	TestPacket = crypto:strong_rand_bytes(20),
 	SendCb = fun(Packet) -> Self ! {mock_tcp, Packet} end,
 	mock_gen_tcp(SendCb),
 	{ok, Ref} = graylog_tcp_sender:open(O),
